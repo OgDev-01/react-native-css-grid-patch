@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
@@ -20,21 +20,26 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function FlexboxExampleScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["bottom"]}>
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.content}>
-          <Text style={styles.title}>Flexbox Layout</Text>
-          <Text style={styles.subtitle}>
-            Traditional grid-like layouts in React Native
-          </Text>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.header}>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Flexbox Layout</Text>
+            <Text style={styles.subtitle}>
+              Traditional grid-like layouts in React Native
+            </Text>
+          </View>
 
           {/* Dashboard Flexbox Example */}
-          <View style={styles.sectionTitle}>
-            <Text style={styles.sectionTitleText}>Dashboard Example</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Dashboard Example</Text>
           </View>
 
           <View style={styles.dashboardContainer}>
             {/* Header - full width */}
-            <View style={styles.headerCard}>
+            <View style={styles.card}>
               <Text style={styles.cardTitle}>Dashboard</Text>
               <Text style={styles.cardSubtitle}>
                 Flexbox approach in React Native
@@ -42,22 +47,28 @@ export default function FlexboxExampleScreen() {
             </View>
 
             {/* Row with two cards */}
-            <View style={styles.cardRow}>
-              <View style={[styles.card, styles.revenueCard]}>
-                <Text style={styles.cardLabel}>REVENUE</Text>
-                <Text style={styles.cardValue}>$12,875</Text>
-                <Text style={styles.cardChange}>+12.5% from last month</Text>
+            <View style={styles.row}>
+              <View style={[styles.statCard, styles.revenueCard]}>
+                <Text style={[styles.statLabel, styles.revenueLabel]}>
+                  REVENUE
+                </Text>
+                <Text style={styles.statValue}>$12,875</Text>
+                <Text style={[styles.statChange, styles.revenueChange]}>
+                  +12.5% from last month
+                </Text>
               </View>
 
-              <View style={[styles.card, styles.usersCard]}>
-                <Text style={styles.cardLabel}>USERS</Text>
-                <Text style={styles.cardValue}>8,420</Text>
-                <Text style={styles.cardChange}>+3.2% from last week</Text>
+              <View style={[styles.statCard, styles.usersCard]}>
+                <Text style={[styles.statLabel, styles.usersLabel]}>USERS</Text>
+                <Text style={styles.statValue}>8,420</Text>
+                <Text style={[styles.statChange, styles.usersChange]}>
+                  +3.2% from last week
+                </Text>
               </View>
             </View>
 
             {/* Activity Overview - full width */}
-            <View style={styles.activityCard}>
+            <View style={styles.card}>
               <Text style={styles.activityTitle}>Activity Overview</Text>
               <View style={styles.chartContainer}>
                 {[40, 65, 45, 80, 55, 90, 70].map((height, index) => (
@@ -65,10 +76,10 @@ export default function FlexboxExampleScreen() {
                     key={index}
                     style={[
                       styles.chartBar,
-                      {
-                        height: height,
-                        backgroundColor: index === 5 ? "#6366f1" : "#334155",
-                      },
+                      index === 5
+                        ? styles.chartBarActive
+                        : styles.chartBarInactive,
+                      { height: `${height}%` },
                     ]}
                   />
                 ))}
@@ -77,93 +88,89 @@ export default function FlexboxExampleScreen() {
           </View>
 
           {/* Simple Grid Example with Flexbox */}
-          <View style={styles.sectionTitle}>
-            <Text style={styles.sectionTitleText}>3-Column Grid (Flexbox)</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>3-Column Grid (Flexbox)</Text>
           </View>
 
           {/* Must manually create rows */}
-          <View style={styles.flexGridContainer}>
-            <View style={styles.flexRow}>
+          <View style={styles.gridContainer}>
+            <View style={styles.row}>
               {[1, 2, 3].map((num) => (
-                <View key={num} style={styles.flexGridItem}>
-                  <Text style={styles.flexGridText}>{num}</Text>
+                <View key={num} style={styles.gridItem}>
+                  <Text style={styles.gridItemText}>{num}</Text>
                 </View>
               ))}
             </View>
-            <View style={styles.flexRow}>
+            <View style={styles.row}>
               {[4, 5, 6].map((num) => (
-                <View key={num} style={styles.flexGridItem}>
-                  <Text style={styles.flexGridText}>{num}</Text>
+                <View key={num} style={styles.gridItem}>
+                  <Text style={styles.gridItemText}>{num}</Text>
                 </View>
               ))}
             </View>
           </View>
 
           {/* Complex Spanning Layout - Very Verbose with Flexbox */}
-          <View style={styles.sectionTitle}>
-            <Text style={styles.sectionTitleText}>
-              Complex Layout (Verbose!)
-            </Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Complex Layout (Verbose!)</Text>
           </View>
 
           <View style={styles.complexContainer}>
             {/* Row 1: Item spanning 2 columns + 1 item */}
-            <View style={styles.flexRow}>
-              <View style={[styles.complexItem, styles.spanTwoFlex]}>
-                <Text style={styles.complexItemText}>Spans 2 columns</Text>
+            <View style={styles.rowSmallGap}>
+              <View style={[styles.complexItem, styles.spanTwoCols]}>
+                <Text style={styles.pinkText}>Spans 2 columns</Text>
               </View>
               <View style={styles.complexItem}>
-                <Text style={styles.complexItemText}>1</Text>
+                <Text style={styles.violetText}>1</Text>
               </View>
             </View>
 
             {/* Row 2 & 3: Need nested structure for row-spanning */}
-            <View style={styles.flexRow}>
-              <View style={styles.twoThirdsContainer}>
-                <View style={styles.flexRow}>
+            <View style={styles.rowSmallGap}>
+              <View style={styles.nestedCol}>
+                <View style={styles.rowSmallGap}>
                   <View style={styles.complexItem}>
-                    <Text style={styles.complexItemText}>2</Text>
+                    <Text style={styles.violetText}>2</Text>
                   </View>
                   <View style={styles.complexItem}>
-                    <Text style={styles.complexItemText}>3</Text>
+                    <Text style={styles.violetText}>3</Text>
                   </View>
                 </View>
-                <View style={styles.flexRow}>
+                <View style={styles.rowSmallGap}>
                   <View style={styles.complexItem}>
-                    <Text style={styles.complexItemText}>4</Text>
+                    <Text style={styles.violetText}>4</Text>
                   </View>
                   <View style={styles.complexItem}>
-                    <Text style={styles.complexItemText}>5</Text>
+                    <Text style={styles.violetText}>5</Text>
                   </View>
                 </View>
               </View>
-              <View style={[styles.complexItem, styles.spanTwoRowsFlex]}>
-                <Text style={styles.complexItemText}>Spans 2 rows</Text>
+              <View style={[styles.complexItem, styles.spanTwoRows]}>
+                <Text style={styles.orangeText}>Spans 2 rows</Text>
               </View>
             </View>
           </View>
 
           {/* Fractional Units with Flexbox */}
-          <View style={styles.sectionTitle}>
-            <Text style={styles.sectionTitleText}>
-              Proportional Sizing (flex)
-            </Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Proportional Sizing (flex)</Text>
           </View>
 
-          <View style={styles.flexRow}>
-            <View style={[styles.frItem, { flex: 1 }]}>
-              <Text style={styles.frText}>flex: 1</Text>
+          <View style={[styles.rowSmallGap, styles.marginBottom]}>
+            <View style={[styles.flexItem, styles.flex1]}>
+              <Text style={styles.tealText}>flex: 1</Text>
             </View>
-            <View style={[styles.frItem, styles.fr2Flex]}>
-              <Text style={styles.frText}>flex: 2</Text>
+            <View style={[styles.flexItem, styles.flex2]}>
+              <Text style={styles.tealText}>flex: 2</Text>
             </View>
-            <View style={[styles.frItem, { flex: 1 }]}>
-              <Text style={styles.frText}>flex: 1</Text>
+            <View style={[styles.flexItem, styles.flex1]}>
+              <Text style={styles.tealText}>flex: 1</Text>
             </View>
           </View>
 
-          <View style={styles.codeHint}>
-            <Text style={styles.codeHintText}>
+          <View style={styles.warningBox}>
+            <Text style={styles.warningText}>
               ⚠️ Notice how this requires more nested Views and manual row
               management compared to CSS Grid!
             </Text>
@@ -185,7 +192,7 @@ export default function FlexboxExampleScreen() {
               <Text style={styles.comparisonLabel}>Auto-placement:</Text>
               <Text style={styles.comparisonValue}>Manual row management</Text>
             </View>
-            <View style={styles.comparisonRow}>
+            <View style={styles.comparisonRowLast}>
               <Text style={styles.comparisonLabel}>Code verbosity:</Text>
               <Text style={styles.comparisonValue}>High (more nesting)</Text>
             </View>
@@ -199,205 +206,243 @@ export default function FlexboxExampleScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0f172a",
+    backgroundColor: "#0f172a", // slate-900
   },
   scrollView: {
     flex: 1,
   },
-  content: {
-    padding: 16,
-    paddingBottom: 40,
+  scrollContent: {
+    paddingHorizontal: 16,
+  },
+  header: {
+    paddingVertical: 32,
+  },
+  titleContainer: {
+    marginBottom: 32,
   },
   title: {
-    fontSize: 28,
+    fontSize: 30,
+    fontWeight: "bold",
+    color: "#ffffff",
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 18,
+    color: "#94a3b8", // slate-400
+    lineHeight: 24,
+  },
+  sectionHeader: {
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1e293b", // slate-800
+    paddingBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#64748b", // slate-500
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  dashboardContainer: {
+    gap: 16,
+    marginBottom: 32,
+  },
+  card: {
+    backgroundColor: "#1e293b", // slate-800
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#334155", // slate-700
+  },
+  cardTitle: {
+    fontSize: 20,
     fontWeight: "bold",
     color: "#ffffff",
     marginBottom: 4,
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#94a3b8",
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    marginTop: 24,
-    marginBottom: 12,
-  },
-  sectionTitleText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#e2e8f0",
-  },
-
-  // Dashboard with Flexbox
-  dashboardContainer: {
-    gap: 12,
-  },
-  headerCard: {
-    backgroundColor: "#6366f1",
-    borderRadius: 16,
-    padding: 16,
-    height: 100,
-    justifyContent: "center",
-  },
-  cardTitle: {
-    color: "#ffffff",
-    fontSize: 24,
-    fontWeight: "bold",
-  },
   cardSubtitle: {
-    color: "rgba(255,255,255,0.8)",
-    fontSize: 14,
-    marginTop: 4,
+    color: "#94a3b8", // slate-400
   },
-  cardRow: {
+  row: {
     flexDirection: "row",
-    gap: 12,
+    gap: 16,
   },
-  card: {
+  statCard: {
     flex: 1,
+    padding: 20,
     borderRadius: 16,
-    padding: 16,
-    height: 120,
-    justifyContent: "space-between",
+    borderWidth: 1,
   },
   revenueCard: {
-    backgroundColor: "#f43f5e",
+    backgroundColor: "rgba(6, 78, 59, 0.2)", // emerald-900/20
+    borderColor: "rgba(16, 185, 129, 0.2)", // emerald-500/20
   },
   usersCard: {
-    backgroundColor: "#10b981",
+    backgroundColor: "rgba(30, 58, 138, 0.2)", // blue-900/20
+    borderColor: "rgba(59, 130, 246, 0.2)", // blue-500/20
   },
-  cardLabel: {
-    color: "rgba(255,255,255,0.8)",
+  statLabel: {
     fontSize: 12,
-    fontWeight: "600",
-  },
-  cardValue: {
-    color: "#ffffff",
-    fontSize: 28,
     fontWeight: "bold",
+    marginBottom: 8,
   },
-  cardChange: {
-    color: "rgba(255,255,255,0.7)",
+  revenueLabel: {
+    color: "#34d399", // emerald-400
+  },
+  usersLabel: {
+    color: "#60a5fa", // blue-400
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#ffffff",
+    marginBottom: 4,
+  },
+  statChange: {
     fontSize: 12,
   },
-  activityCard: {
-    backgroundColor: "#1e293b",
-    borderRadius: 16,
-    padding: 16,
-    height: 160,
+  revenueChange: {
+    color: "rgba(52, 211, 153, 0.8)", // emerald-400/80
+  },
+  usersChange: {
+    color: "rgba(96, 165, 250, 0.8)", // blue-400/80
   },
   activityTitle: {
-    color: "#ffffff",
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 12,
+    color: "#ffffff",
+    marginBottom: 16,
   },
   chartContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
+    justifyContent: "space-between",
+    height: 128, // h-32
     gap: 8,
-    flex: 1,
   },
   chartBar: {
     flex: 1,
-    borderRadius: 4,
+    borderTopLeftRadius: 6,
+    borderTopRightRadius: 6,
   },
-
-  // Flexbox Grid - requires manual rows
-  flexGridContainer: {
+  chartBarActive: {
+    backgroundColor: "#6366f1", // indigo-500
+  },
+  chartBarInactive: {
+    backgroundColor: "#334155", // slate-700
+  },
+  gridContainer: {
+    gap: 16,
+    marginBottom: 32,
+  },
+  gridItem: {
+    flex: 1,
+    aspectRatio: 1,
+    backgroundColor: "#1e293b", // slate-800
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#334155", // slate-700
+  },
+  gridItemText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#94a3b8", // slate-400
+  },
+  complexContainer: {
     gap: 8,
+    marginBottom: 32,
   },
-  flexRow: {
+  rowSmallGap: {
     flexDirection: "row",
     gap: 8,
   },
-  flexGridItem: {
-    flex: 1,
-    backgroundColor: "#3b82f6",
-    borderRadius: 12,
-    padding: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  flexGridText: {
-    color: "#ffffff",
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-
-  // Complex spanning - very verbose with flexbox
-  complexContainer: {
-    gap: 8,
-  },
   complexItem: {
-    flex: 1,
-    backgroundColor: "#8b5cf6",
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     padding: 12,
+  },
+  spanTwoCols: {
+    flex: 2,
+    backgroundColor: "rgba(236, 72, 153, 0.2)", // pink-500/20
+    borderWidth: 1,
+    borderColor: "rgba(236, 72, 153, 0.3)", // pink-500/30
     minHeight: 80,
   },
-  spanTwoFlex: {
-    flex: 2,
-    backgroundColor: "#ec4899",
-  },
-  twoThirdsContainer: {
+  nestedCol: {
     flex: 2,
     gap: 8,
   },
-  spanTwoRowsFlex: {
-    backgroundColor: "#f97316",
+  spanTwoRows: {
+    flex: 1,
+    backgroundColor: "rgba(249, 115, 22, 0.2)", // orange-500/20
+    borderWidth: 1,
+    borderColor: "rgba(249, 115, 22, 0.3)", // orange-500/30
   },
-  complexItemText: {
-    color: "#ffffff",
-    fontSize: 14,
+  pinkText: {
+    color: "#fbcfe8", // pink-200
     fontWeight: "600",
     textAlign: "center",
   },
-
-  // Fractional sizing with flex
-  frItem: {
-    backgroundColor: "#14b8a6",
+  violetText: {
+    color: "#ddd6fe", // violet-200
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  orangeText: {
+    color: "#fed7aa", // orange-200
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  marginBottom: {
+    marginBottom: 32,
+  },
+  flexItem: {
     borderRadius: 12,
     padding: 20,
     alignItems: "center",
     justifyContent: "center",
   },
-  fr2Flex: {
-    flex: 2,
-    backgroundColor: "#0d9488",
+  flex1: {
+    flex: 1,
+    backgroundColor: "rgba(20, 184, 166, 0.2)", // teal-500/20
+    borderWidth: 1,
+    borderColor: "rgba(20, 184, 166, 0.3)", // teal-500/30
   },
-  frText: {
-    color: "#ffffff",
-    fontSize: 16,
+  flex2: {
+    flex: 2,
+    backgroundColor: "rgba(13, 148, 136, 0.2)", // teal-600/20
+    borderWidth: 1,
+    borderColor: "rgba(13, 148, 136, 0.3)", // teal-600/30
+  },
+  tealText: {
+    color: "#99f6e4", // teal-200
     fontWeight: "bold",
   },
-
-  codeHint: {
-    marginTop: 32,
-    backgroundColor: "#1e293b",
-    borderRadius: 12,
-    padding: 16,
+  warningBox: {
+    backgroundColor: "rgba(30, 41, 59, 0.5)", // slate-800/50
     borderLeftWidth: 4,
-    borderLeftColor: "#f97316",
+    borderLeftColor: "#f97316", // orange-500
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+    padding: 16,
+    marginBottom: 32,
   },
-  codeHintText: {
-    color: "#94a3b8",
-    fontSize: 14,
+  warningText: {
+    color: "#94a3b8", // slate-400
     lineHeight: 20,
   },
-
   comparisonBox: {
-    marginTop: 16,
-    backgroundColor: "#1e293b",
+    backgroundColor: "#1e293b", // slate-800
     borderRadius: 12,
     padding: 16,
+    marginBottom: 32,
   },
   comparisonTitle: {
     color: "#ffffff",
-    fontSize: 16,
     fontWeight: "600",
     marginBottom: 12,
   },
@@ -406,15 +451,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#334155",
+    borderBottomColor: "#334155", // slate-700
+  },
+  comparisonRowLast: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 8,
   },
   comparisonLabel: {
-    color: "#94a3b8",
-    fontSize: 14,
+    color: "#94a3b8", // slate-400
   },
   comparisonValue: {
-    color: "#e2e8f0",
-    fontSize: 14,
+    color: "#e2e8f0", // slate-200
     fontWeight: "500",
   },
 });

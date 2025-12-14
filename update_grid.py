@@ -1,4 +1,7 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+
+import os
+
+content = """import { ScrollView, Text, View, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
@@ -22,13 +25,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function GridExampleScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["bottom"]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-      >
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>CSS Grid Layout</Text>
+            <Text style={styles.title}>
+              CSS Grid Layout
+            </Text>
             <Text style={styles.subtitle}>
               Native grid support in React Native
             </Text>
@@ -36,7 +38,9 @@ export default function GridExampleScreen() {
 
           {/* Dashboard Grid Example */}
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Dashboard Example</Text>
+            <Text style={styles.sectionTitle}>
+              Dashboard Example
+            </Text>
           </View>
 
           {/*
@@ -50,10 +54,10 @@ export default function GridExampleScreen() {
             style={[
               styles.gridContainer,
               {
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
                 gap: 16,
-              },
+              }
             ]}
           >
             {/* Header - spans 2 columns */}
@@ -61,7 +65,7 @@ export default function GridExampleScreen() {
               style={[
                 styles.card,
                 styles.headerCard,
-                { gridColumnStart: 1, gridColumnEnd: 3 },
+                { gridColumnStart: 1, gridColumnEnd: 3 }
               ]}
             >
               <Text style={styles.cardTitle}>Dashboard</Text>
@@ -87,7 +91,7 @@ export default function GridExampleScreen() {
               style={[
                 styles.card,
                 styles.activityCard,
-                { gridColumnStart: 1, gridColumnEnd: 3 },
+                { gridColumnStart: 1, gridColumnEnd: 3 }
               ]}
             >
               <Text style={styles.activityTitle}>Activity Overview</Text>
@@ -97,10 +101,8 @@ export default function GridExampleScreen() {
                     key={index}
                     style={[
                       styles.chartBar,
-                      index === 5
-                        ? styles.chartBarActive
-                        : styles.chartBarInactive,
-                      { height: `${height}%` },
+                      index === 5 ? styles.chartBarActive : styles.chartBarInactive,
+                      { height: `${height}%` }
                     ]}
                   />
                 ))}
@@ -110,21 +112,26 @@ export default function GridExampleScreen() {
 
           {/* Simple Grid Example */}
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>3-Column Grid</Text>
+            <Text style={styles.sectionTitle}>
+              3-Column Grid
+            </Text>
           </View>
 
           <View
             style={[
               styles.gridContainer,
               {
-                display: "grid",
-                gridTemplateColumns: ["1fr", "1fr", "1fr"],
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 1fr',
                 gap: 16,
-              },
+              }
             ]}
           >
             {[1, 2, 3, 4, 5, 6].map((num) => (
-              <View key={num} style={styles.simpleGridItem}>
+              <View
+                key={num}
+                style={styles.simpleGridItem}
+              >
                 <Text style={styles.simpleGridText}>{num}</Text>
               </View>
             ))}
@@ -132,24 +139,26 @@ export default function GridExampleScreen() {
 
           {/* Grid with Spanning Items */}
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Grid with Spanning</Text>
+            <Text style={styles.sectionTitle}>
+              Grid with Spanning
+            </Text>
           </View>
 
           <View
             style={[
               styles.gridContainer,
               {
-                display: "grid",
-                gridTemplateColumns: ["1fr", "1fr", "1fr"],
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 1fr',
                 gap: 8,
-              },
+              }
             ]}
           >
             <View
               style={[
                 styles.spanItem,
                 styles.pinkItem,
-                { gridColumnStart: 1, gridColumnEnd: 3 },
+                { gridColumnStart: 1, gridColumnEnd: 3 }
               ]}
             >
               <Text style={styles.itemText}>Spans 2 columns</Text>
@@ -168,7 +177,7 @@ export default function GridExampleScreen() {
               style={[
                 styles.spanItem,
                 styles.orangeItem,
-                { gridRowStart: 2, gridRowEnd: 4, gridColumnStart: 3 },
+                { gridRowStart: 2, gridRowEnd: 4, gridColumnStart: 3 }
               ]}
             >
               <Text style={styles.itemText}>Spans 2 rows</Text>
@@ -184,17 +193,19 @@ export default function GridExampleScreen() {
 
           {/* Fractional Units */}
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Fractional Units (fr)</Text>
+            <Text style={styles.sectionTitle}>
+              Fractional Units (fr)
+            </Text>
           </View>
 
           <View
             style={[
               styles.gridContainer,
               {
-                display: "grid",
-                gridTemplateColumns: ["1fr", "2fr", "1fr"],
+                display: 'grid',
+                gridTemplateColumns: '1fr 2fr 1fr',
                 gap: 8,
-              },
+              }
             ]}
           >
             <View style={[styles.frItem, styles.tealItem]}>
@@ -210,8 +221,7 @@ export default function GridExampleScreen() {
 
           <View style={styles.infoBox}>
             <Text style={styles.infoText}>
-              ✨ Notice how clean the structure is! No nested Views required for
-              rows or complex spanning.
+              ✨ Notice how clean the structure is! No nested Views required for rows or complex spanning.
             </Text>
           </View>
 
@@ -234,6 +244,7 @@ export default function GridExampleScreen() {
               <Text style={styles.comparisonValue}>Low (flat structure)</Text>
             </View>
           </View>
+
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -462,3 +473,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 });
+"""
+
+with open("app/grid-example.tsx", "w") as f:
+    f.write(content)

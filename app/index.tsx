@@ -1,75 +1,100 @@
-import { View, Text, Pressable, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Link } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["bottom"]}>
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.header}>
-          <Text style={styles.title}>CSS Grid Test 🎨</Text>
-          <Text style={styles.subtitle}>
-            Comparing CSS Grid vs Flexbox layouts in React Native
-          </Text>
-        </View>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>CSS Grid Test 🎨</Text>
+            <Text style={styles.subtitle}>
+              Comparing CSS Grid vs Flexbox layouts in React Native
+            </Text>
+          </View>
 
-        <View style={styles.cardsContainer}>
-          <Link href="/grid-example" asChild>
-            <Pressable style={styles.card}>
-              <View style={styles.cardIconContainer}>
-                <Text style={styles.cardIcon}>📐</Text>
-              </View>
-              <Text style={styles.cardTitle}>CSS Grid Example</Text>
-              <Text style={styles.cardDescription}>
-                Native CSS Grid layout with gridTemplateColumns, gridTemplateRows,
-                and grid item placement
-              </Text>
-              <View style={styles.cardBadge}>
-                <Text style={styles.cardBadgeText}>NEW</Text>
-              </View>
-            </Pressable>
-          </Link>
+          <View style={styles.cardsContainer}>
+            <Link href="/grid-example" asChild>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.card,
+                  styles.gridCard,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <View style={styles.cardHeader}>
+                  <View
+                    style={[styles.iconContainer, styles.gridIconContainer]}
+                  >
+                    <Text style={styles.icon}>📐</Text>
+                  </View>
+                  <View style={[styles.badge, styles.gridBadge]}>
+                    <Text style={styles.badgeText}>NEW</Text>
+                  </View>
+                </View>
+                <Text style={styles.cardTitle}>CSS Grid Example</Text>
+                <Text style={styles.cardDescriptionGrid}>
+                  Native CSS Grid layout with gridTemplateColumns,
+                  gridTemplateRows, and grid item placement
+                </Text>
+              </Pressable>
+            </Link>
 
-          <Link href="/flexbox-example" asChild>
-            <Pressable style={styles.cardAlt}>
-              <View style={styles.cardIconContainerAlt}>
-                <Text style={styles.cardIcon}>📦</Text>
-              </View>
-              <Text style={styles.cardTitle}>Flexbox Example</Text>
-              <Text style={styles.cardDescription}>
-                Traditional flexbox approach with nested Views and manual row
-                management
-              </Text>
-              <View style={styles.cardBadgeAlt}>
-                <Text style={styles.cardBadgeTextAlt}>TRADITIONAL</Text>
-              </View>
-            </Pressable>
-          </Link>
-        </View>
+            <Link href="/flexbox-example" asChild>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.card,
+                  styles.flexCard,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <View style={styles.cardHeader}>
+                  <View
+                    style={[styles.iconContainer, styles.flexIconContainer]}
+                  >
+                    <Text style={styles.icon}>📦</Text>
+                  </View>
+                  <View style={[styles.badge, styles.flexBadge]}>
+                    <Text style={styles.flexBadgeText}>TRADITIONAL</Text>
+                  </View>
+                </View>
+                <Text style={styles.cardTitle}>Flexbox Example</Text>
+                <Text style={styles.cardDescriptionFlex}>
+                  Traditional flexbox approach with nested Views and manual row
+                  management
+                </Text>
+              </Pressable>
+            </Link>
+          </View>
 
-        <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>About this demo</Text>
-          <Text style={styles.infoText}>
-            This project demonstrates the CSS Grid patch for React Native from
-            @intergalacticspacehighway. Compare the two examples to see how Grid
-            simplifies complex layouts.
-          </Text>
-        </View>
+          <View style={styles.aboutBox}>
+            <Text style={styles.aboutTitle}>About this demo</Text>
+            <Text style={styles.aboutText}>
+              This project demonstrates the CSS Grid patch for React Native from
+              @intergalacticspacehighway. Compare the two examples to see how
+              Grid simplifies complex layouts.
+            </Text>
+          </View>
 
-        <View style={styles.techStack}>
-          <Text style={styles.techTitle}>Tech Stack</Text>
-          <View style={styles.techRow}>
-            <View style={styles.techItem}>
-              <Text style={styles.techLabel}>Expo SDK</Text>
-              <Text style={styles.techValue}>55 Canary</Text>
-            </View>
-            <View style={styles.techItem}>
-              <Text style={styles.techLabel}>React Native</Text>
-              <Text style={styles.techValue}>0.83.0-rc.5</Text>
+          <View>
+            <Text style={styles.techStackTitle}>Tech Stack</Text>
+            <View style={styles.techStackRow}>
+              <View style={styles.techItem}>
+                <Text style={styles.techLabel}>Expo SDK</Text>
+                <Text style={styles.techValue}>55 Canary</Text>
+              </View>
+              <View style={styles.techItem}>
+                <Text style={styles.techLabel}>React Native</Text>
+                <Text style={styles.techValue}>0.83.0-rc.5</Text>
+              </View>
             </View>
           </View>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -77,66 +102,93 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0f172a",
+    backgroundColor: "#0f172a", // slate-900
   },
-  content: {
+  scrollView: {
     flex: 1,
-    padding: 16,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
   },
   header: {
-    marginTop: 20,
+    paddingVertical: 32,
+  },
+  titleContainer: {
     marginBottom: 32,
   },
   title: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: "bold",
     color: "#ffffff",
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#94a3b8",
+    fontSize: 18,
+    color: "#94a3b8", // slate-400
     lineHeight: 24,
   },
   cardsContainer: {
-    gap: 16,
+    gap: 24,
+    marginBottom: 32,
   },
   card: {
-    backgroundColor: "#6366f1",
-    borderRadius: 20,
-    padding: 20,
-    position: "relative",
-    overflow: "hidden",
-  },
-  cardAlt: {
-    backgroundColor: "#1e293b",
-    borderRadius: 20,
-    padding: 20,
-    position: "relative",
-    overflow: "hidden",
+    borderRadius: 16,
+    padding: 24,
     borderWidth: 1,
-    borderColor: "#334155",
   },
-  cardIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
+  pressed: {
+    opacity: 0.8,
+  },
+  gridCard: {
+    backgroundColor: "rgba(79, 70, 229, 0.2)", // indigo-600/20
+    borderColor: "rgba(99, 102, 241, 0.3)", // indigo-500/30
+  },
+  flexCard: {
+    backgroundColor: "#1e293b", // slate-800
+    borderColor: "#334155", // slate-700
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 16,
   },
-  cardIconContainerAlt: {
+  iconContainer: {
     width: 48,
     height: 48,
-    borderRadius: 12,
-    backgroundColor: "#334155",
+    borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
   },
-  cardIcon: {
+  gridIconContainer: {
+    backgroundColor: "rgba(99, 102, 241, 0.2)", // indigo-500/20
+  },
+  flexIconContainer: {
+    backgroundColor: "#334155", // slate-700
+  },
+  icon: {
     fontSize: 24,
+  },
+  badge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 9999,
+  },
+  gridBadge: {
+    backgroundColor: "#6366f1", // indigo-500
+  },
+  flexBadge: {
+    backgroundColor: "#334155", // slate-700
+  },
+  badgeText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  flexBadgeText: {
+    color: "#cbd5e1", // slate-300
+    fontSize: 12,
+    fontWeight: "bold",
   },
   cardTitle: {
     fontSize: 20,
@@ -144,87 +196,59 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     marginBottom: 8,
   },
-  cardDescription: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.8)",
+  cardDescriptionGrid: {
+    color: "#c7d2fe", // indigo-200
     lineHeight: 20,
   },
-  cardBadge: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    backgroundColor: "#22c55e",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  cardDescriptionFlex: {
+    color: "#94a3b8", // slate-400
+    lineHeight: 20,
+  },
+  aboutBox: {
+    backgroundColor: "rgba(30, 41, 59, 0.5)", // slate-800/50
     borderRadius: 12,
+    padding: 20,
+    marginBottom: 32,
+    borderWidth: 1,
+    borderColor: "#1e293b", // slate-800
   },
-  cardBadgeText: {
-    color: "#ffffff",
-    fontSize: 11,
-    fontWeight: "bold",
-  },
-  cardBadgeAlt: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    backgroundColor: "#475569",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  cardBadgeTextAlt: {
-    color: "#94a3b8",
-    fontSize: 11,
-    fontWeight: "bold",
-  },
-  infoBox: {
-    marginTop: 32,
-    backgroundColor: "#1e293b",
-    borderRadius: 16,
-    padding: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: "#6366f1",
-  },
-  infoTitle: {
+  aboutTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: "#ffffff",
     marginBottom: 8,
   },
-  infoText: {
-    fontSize: 14,
-    color: "#94a3b8",
-    lineHeight: 22,
+  aboutText: {
+    color: "#94a3b8", // slate-400
+    lineHeight: 20,
   },
-  techStack: {
-    marginTop: 24,
-  },
-  techTitle: {
+  techStackTitle: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#64748b",
-    marginBottom: 12,
+    fontWeight: "bold",
+    color: "#64748b", // slate-500
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 1, // tracking-wider
+    marginBottom: 16,
   },
-  techRow: {
+  techStackRow: {
     flexDirection: "row",
-    gap: 16,
+    gap: 12,
   },
   techItem: {
-    flex: 1,
-    backgroundColor: "#1e293b",
-    borderRadius: 12,
-    padding: 12,
+    backgroundColor: "#1e293b", // slate-800
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#334155", // slate-700
   },
   techLabel: {
+    color: "#94a3b8", // slate-400
     fontSize: 12,
-    color: "#64748b",
     marginBottom: 4,
   },
   techValue: {
-    fontSize: 16,
+    color: "#ffffff",
     fontWeight: "600",
-    color: "#e2e8f0",
   },
 });
