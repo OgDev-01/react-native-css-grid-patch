@@ -5,7 +5,7 @@
   "scripts": {
     "start": "expo start",
     "prebuild": "expo prebuild",
-    "postinstall": "patch-package",
+    "postinstall": "patch -p1 < patches/react-native+0.83.0-rc.5.patch && patch -p1 < patches/expo+55.0.0-canary-20251212-acb11f2.patch",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",

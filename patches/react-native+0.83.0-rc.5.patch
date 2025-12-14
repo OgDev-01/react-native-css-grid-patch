@@ -1856,7 +1856,7 @@ new file mode 100644
 index 00000000000000..0867ea72d9a627
 --- /dev/null
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/GridLayout.cpp
-@@ -0,0 +1,434 @@
+@@ -0,0 +1,433 @@
 +/*
 + * Copyright (c) Meta Platforms, Inc. and affiliates.
 + *
@@ -2290,6 +2290,7 @@ index 00000000000000..0867ea72d9a627
 +}
 +
 +} // namespace facebook::yoga
+\ No newline at end of file
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/GridLayout.h b/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/GridLayout.h
 new file mode 100644
 index 00000000000000..9e65dc6f83803f
@@ -4561,3 +4562,12 @@ index fc4d371e421bf2..76e079b2da5828 100644
    constexpr static StyleSizeLength ofAuto() {
      return StyleSizeLength{{}, Unit::Auto};
    }
+@@ -101,7 +107,7 @@ class StyleSizeLength {
+     return value_;
+   }
+
+-  constexpr FloatOptional resolve(float referenceLength) {
++  constexpr FloatOptional resolve(float referenceLength) const {
+     switch (unit_) {
+       case Unit::Point:
+         return value_;

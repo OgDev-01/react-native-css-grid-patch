@@ -1,5 +1,6 @@
---- node_modules/expo/types/react-native-web.d.ts	2025-12-14 17:39:14
-+++ temp_modified.d.ts	2025-12-14 18:13:32
+diff --git a/node_modules/expo/types/react-native-web.d.ts b/node_modules/expo/types/react-native-web.d.ts
+--- a/node_modules/expo/types/react-native-web.d.ts
++++ b/node_modules/expo/types/react-native-web.d.ts
 @@ -49,29 +49,29 @@
      /** @platform web */
      clip?: string;

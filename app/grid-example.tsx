@@ -51,7 +51,7 @@ export default function GridExampleScreen() {
               styles.gridContainer,
               {
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr",
+                gridTemplateColumns: ["1fr", "1fr"],
                 gap: 16,
               },
             ]}
@@ -94,7 +94,7 @@ export default function GridExampleScreen() {
               <View style={styles.chartContainer}>
                 {[40, 65, 45, 80, 55, 90, 70].map((height, index) => (
                   <View
-                    key={index}
+                    key={Math.random().toString()}
                     style={[
                       styles.chartBar,
                       index === 5
