@@ -28,6 +28,12 @@ export default function AppTabs() {
           <TabTrigger name="explore" href="/explore" asChild>
             <TabButton>Explore</TabButton>
           </TabTrigger>
+          <TabTrigger name="grid-example" href="/grid-example" asChild>
+            <TabButton>Grid</TabButton>
+          </TabTrigger>
+          <TabTrigger name="flexbox-example" href="/flexbox-example" asChild>
+            <TabButton>Flexbox</TabButton>
+          </TabTrigger>
         </CustomTabList>
       </TabList>
     </Tabs>
