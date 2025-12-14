@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, StyleSheet, ViewStyle } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
@@ -130,7 +130,7 @@ export default function GridExampleScreen() {
 
           <View style={styles.codeHint}>
             <Text style={styles.codeHintText}>
-              💡 Using display: 'grid' with gridTemplateColumns and
+              💡 Using display: &apos;grid&apos; with gridTemplateColumns and
               gridTemplateRows
             </Text>
           </View>
@@ -139,20 +139,6 @@ export default function GridExampleScreen() {
     </SafeAreaView>
   );
 }
-
-type GridTrackSize = number | string | {min: number | string; max: number | string};
-
-type GridViewStyle = ViewStyle & {
-  display?: "none" | "flex" | "contents" | "grid";
-  gridTemplateColumns?: readonly GridTrackSize[];
-  gridTemplateRows?: readonly GridTrackSize[];
-  gridAutoColumns?: readonly GridTrackSize[];
-  gridAutoRows?: readonly GridTrackSize[];
-  gridColumnStart?: number | "auto" | `span ${number}`;
-  gridColumnEnd?: number | "auto" | `span ${number}`;
-  gridRowStart?: number | "auto" | `span ${number}`;
-  gridRowEnd?: number | "auto" | `span ${number}`;
-};
 
 const styles = StyleSheet.create({
   container: {
@@ -192,8 +178,8 @@ const styles = StyleSheet.create({
     display: "grid",
     gridTemplateColumns: ["1fr", "1fr"] as const,
     gridTemplateRows: [100, 120, 160] as const,
-    gap: 10,
-  } satisfies GridViewStyle,
+    gap: 20,
+  },
   gridItem: {
     borderRadius: 16,
     padding: 16,
@@ -203,7 +189,7 @@ const styles = StyleSheet.create({
     gridColumnStart: 1,
     gridColumnEnd: 3,
     justifyContent: "center",
-  } satisfies GridViewStyle,
+  },
   cardTitle: {
     color: "#ffffff",
     fontSize: 24,
@@ -240,7 +226,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1e293b",
     gridColumnStart: 1,
     gridColumnEnd: 3,
-  } satisfies GridViewStyle,
+  },
   activityTitle: {
     color: "#ffffff",
     fontSize: 16,
@@ -263,7 +249,7 @@ const styles = StyleSheet.create({
     display: "grid",
     gridTemplateColumns: ["1fr", "1fr", "1fr"] as const,
     gap: 8,
-  } satisfies GridViewStyle,
+  },
   simpleGridItem: {
     backgroundColor: "#3b82f6",
     borderRadius: 12,
@@ -283,7 +269,7 @@ const styles = StyleSheet.create({
     gridTemplateColumns: ["1fr", "1fr", "1fr"] as const,
     gridAutoRows: [80] as const,
     gap: 8,
-  } satisfies GridViewStyle,
+  },
   spanItem: {
     backgroundColor: "#8b5cf6",
     borderRadius: 12,
@@ -295,12 +281,12 @@ const styles = StyleSheet.create({
     gridColumnStart: 1,
     gridColumnEnd: 3,
     backgroundColor: "#ec4899",
-  } satisfies GridViewStyle,
+  },
   spanTwoRows: {
     gridRowStart: 2,
     gridRowEnd: 4,
     backgroundColor: "#f97316",
-  } satisfies GridViewStyle,
+  },
   spanItemText: {
     color: "#ffffff",
     fontSize: 14,
@@ -313,7 +299,7 @@ const styles = StyleSheet.create({
     display: "grid",
     gridTemplateColumns: ["1fr", "2fr", "1fr"] as const,
     gap: 8,
-  } satisfies GridViewStyle,
+  },
   frItem: {
     backgroundColor: "#14b8a6",
     borderRadius: 12,

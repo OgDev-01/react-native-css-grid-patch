@@ -1,11 +1,63 @@
+From fe8e3d095871b2144ebc2345e652db83b2e06bfd Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?nishan=20=28o=5E=E2=96=BD=5Eo=29?= <nishanbende@gmail.com>
+Date: Thu, 11 Dec 2025 15:43:57 +0530
+Subject: [PATCH] css grid ios
+
+---
+ .../View/ReactNativeStyleAttributes.js        |   12 +
+ .../Libraries/StyleSheet/StyleSheetTypes.d.ts |   39 +-
+ .../Libraries/StyleSheet/StyleSheetTypes.js   |   45 +-
+ node_modules/react-native/React/Views/RCTLayout.h |    1 +
+ node_modules/react-native/React/Views/RCTLayout.m |    4 +
+ .../components/view/YogaStylableProps.cpp     |   18 +-
+ .../renderer/components/view/conversions.h    |  145 ++
+ .../components/view/propsConversions.h        |   22 +
+ .../react/renderer/core/LayoutMetrics.cpp     |    3 +-
+ .../react/renderer/core/LayoutPrimitives.h    |    1 +
+ .../react/renderer/core/conversions.h         |    4 +
+ .../ReactCommon/yoga/yoga/YGEnums.cpp         |   30 +
+ .../ReactCommon/yoga/yoga/YGEnums.h           |   21 +-
+ .../ReactCommon/yoga/yoga/YGGridTrackList.cpp |  186 ++
+ .../ReactCommon/yoga/yoga/YGGridTrackList.h   |   97 +
+ .../ReactCommon/yoga/yoga/YGNodeStyle.cpp     |  106 +-
+ .../ReactCommon/yoga/yoga/YGNodeStyle.h       |   32 +-
+ .../yoga/yoga/algorithm/AbsoluteLayout.cpp    |    6 +
+ .../ReactCommon/yoga/yoga/algorithm/Align.h   |   14 +-
+ .../yoga/yoga/algorithm/CalculateLayout.cpp   |   35 +-
+ .../yoga/yoga/algorithm/CalculateLayout.h     |   22 +
+ .../yoga/yoga/algorithm/grid/AutoPlacement.h  |  536 +++++
+ .../yoga/yoga/algorithm/grid/GridLayout.cpp   |  434 ++++
+ .../yoga/yoga/algorithm/grid/GridLayout.h     |   43 +
+ .../yoga/yoga/algorithm/grid/TrackSizing.h    | 1788 +++++++++++++++++
+ .../ReactCommon/yoga/yoga/enums/Align.h       |    4 +-
+ .../ReactCommon/yoga/yoga/enums/Display.h     |    3 +-
+ .../ReactCommon/yoga/yoga/enums/Justify.h     |    6 +-
+ .../ReactCommon/yoga/yoga/event/event.h       |    1 +
+ .../ReactCommon/yoga/yoga/node/Node.h         |    8 +-
+ .../ReactCommon/yoga/yoga/style/GridLine.h    |   61 +
+ .../ReactCommon/yoga/yoga/style/GridTrack.h   |   61 +
+ .../ReactCommon/yoga/yoga/style/Style.h       |  112 +-
+ .../yoga/yoga/style/StyleSizeLength.h         |    8 +-
+ packages/rn-tester/Podfile.lock               |  395 +++-
+ packages/rn-tester/js/RNTesterAppShared.js    |  147 +-
+ 36 files changed, 4273 insertions(+), 177 deletions(-)
+ create mode 100644 node_modules/react-native/ReactCommon/yoga/yoga/YGGridTrackList.cpp
+ create mode 100644 node_modules/react-native/ReactCommon/yoga/yoga/YGGridTrackList.h
+ create mode 100644 node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/AutoPlacement.h
+ create mode 100644 node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/GridLayout.cpp
+ create mode 100644 node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/GridLayout.h
+ create mode 100644 node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/TrackSizing.h
+ create mode 100644 node_modules/react-native/ReactCommon/yoga/yoga/style/GridLine.h
+ create mode 100644 node_modules/react-native/ReactCommon/yoga/yoga/style/GridTrack.h
+
 diff --git a/node_modules/react-native/Libraries/Components/View/ReactNativeStyleAttributes.js b/node_modules/react-native/Libraries/Components/View/ReactNativeStyleAttributes.js
-index 93c3d10..1827daa 100644
+index 93c3d1004bff24..1827daacb1c9de 100644
 --- a/node_modules/react-native/Libraries/Components/View/ReactNativeStyleAttributes.js
 +++ b/node_modules/react-native/Libraries/Components/View/ReactNativeStyleAttributes.js
 @@ -107,6 +107,18 @@ const ReactNativeStyleAttributes: {[string]: AnyAttributeType, ...} = {
    width: true,
    zIndex: true,
- 
+
 +  /**
 +   * Grid Layout
 +   */
@@ -22,7 +74,7 @@ index 93c3d10..1827daa 100644
     * Shadow
     */
 diff --git a/node_modules/react-native/Libraries/StyleSheet/StyleSheetTypes.d.ts b/node_modules/react-native/Libraries/StyleSheet/StyleSheetTypes.d.ts
-index c0fe660..4abeb04 100644
+index 9446cbe4a2487d..5ba154c9c2ceae 100644
 --- a/node_modules/react-native/Libraries/StyleSheet/StyleSheetTypes.d.ts
 +++ b/node_modules/react-native/Libraries/StyleSheet/StyleSheetTypes.d.ts
 @@ -56,7 +56,7 @@ export interface FlexStyle {
@@ -37,7 +89,7 @@ index c0fe660..4abeb04 100644
 @@ -113,6 +113,43 @@ export interface FlexStyle {
    zIndex?: number | undefined;
    direction?: 'inherit' | 'ltr' | 'rtl' | undefined;
- 
+
 +  // Grid Container Properties
 +  /**
 +   * Defines the columns of the grid with a list of track sizes.
@@ -79,7 +131,7 @@ index c0fe660..4abeb04 100644
     * Equivalent to `top`, `bottom`, `right` and `left`
     */
 diff --git a/node_modules/react-native/Libraries/StyleSheet/StyleSheetTypes.js b/node_modules/react-native/Libraries/StyleSheet/StyleSheetTypes.js
-index 745362c..26dd75b 100644
+index 745362c134a57a..26dd75b62e8398 100644
 --- a/node_modules/react-native/Libraries/StyleSheet/StyleSheetTypes.js
 +++ b/node_modules/react-native/Libraries/StyleSheet/StyleSheetTypes.js
 @@ -61,7 +61,7 @@ type ____LayoutStyle_Internal = $ReadOnly<{
@@ -88,13 +140,13 @@ index 745362c..26dd75b 100644
     */
 -  display?: 'none' | 'flex' | 'contents',
 +  display?: 'none' | 'flex' | 'contents' | 'grid',
- 
+
    /** `width` sets the width of this component.
     *
 @@ -651,6 +651,49 @@ type ____LayoutStyle_Internal = $ReadOnly<{
     */
    direction?: 'inherit' | 'ltr' | 'rtl',
- 
+
 +  // Grid Container Properties
 +  /**
 +   * Defines the columns of the grid with a list of track sizes.
@@ -142,7 +194,7 @@ index 745362c..26dd75b 100644
     * In React Native, gap works the same way it does in CSS.
     * If there are two or more children in a container, they will be separated from each other
 diff --git a/node_modules/react-native/React/Views/RCTLayout.h b/node_modules/react-native/React/Views/RCTLayout.h
-index 8016463..101ee92 100644
+index 8016463e145cb6..101ee923e716b7 100644
 --- a/node_modules/react-native/React/Views/RCTLayout.h
 +++ b/node_modules/react-native/React/Views/RCTLayout.h
 @@ -18,6 +18,7 @@ typedef NS_ENUM(NSInteger, RCTDisplayType) {
@@ -151,10 +203,10 @@ index 8016463..101ee92 100644
    RCTDisplayTypeInline,
 +  RCTDisplayTypeGrid,
  };
- 
+
  struct RCTLayoutMetrics {
 diff --git a/node_modules/react-native/React/Views/RCTLayout.m b/node_modules/react-native/React/Views/RCTLayout.m
-index 944b728..71290b6 100644
+index 944b728684c5ce..71290b6737983f 100644
 --- a/node_modules/react-native/React/Views/RCTLayout.m
 +++ b/node_modules/react-native/React/Views/RCTLayout.m
 @@ -121,6 +121,8 @@ YGDisplay RCTYogaDisplayTypeFromReactDisplayType(RCTDisplayType displayType)
@@ -165,7 +217,7 @@ index 944b728..71290b6 100644
 +      return YGDisplayGrid;
    }
  }
- 
+
 @@ -134,5 +136,7 @@ RCTDisplayType RCTReactDisplayTypeFromYogaDisplayType(YGDisplay displayType)
      case YGDisplayContents:
        RCTAssert(NO, @"YGDisplayContents cannot be converted to RCTDisplayType value.");
@@ -175,20 +227,20 @@ index 944b728..71290b6 100644
    }
  }
 diff --git a/node_modules/react-native/ReactCommon/react/renderer/components/view/YogaStylableProps.cpp b/node_modules/react-native/ReactCommon/react/renderer/components/view/YogaStylableProps.cpp
-index 0e2529c..7020e4a 100644
+index 0e2529c1e5af2c..7020e4ae168aae 100644
 --- a/node_modules/react-native/ReactCommon/react/renderer/components/view/YogaStylableProps.cpp
 +++ b/node_modules/react-native/ReactCommon/react/renderer/components/view/YogaStylableProps.cpp
 @@ -27,11 +27,13 @@ YogaStylableProps::YogaStylableProps(
      : Props() {
    initialize(context, sourceProps, rawProps, filterObjectKeys);
- 
+
 -  yogaStyle = ReactNativeFeatureFlags::enableCppPropsIteratorSetter()
 +  bool useIterator = ReactNativeFeatureFlags::enableCppPropsIteratorSetter();
 +
 +  yogaStyle = useIterator
        ? sourceProps.yogaStyle
        : convertRawProp(context, rawProps, sourceProps.yogaStyle);
- 
+
 -  if (!ReactNativeFeatureFlags::enableCppPropsIteratorSetter()) {
 +  if (!useIterator) {
      convertRawPropAliases(context, sourceProps, rawProps);
@@ -197,7 +249,7 @@ index 0e2529c..7020e4a 100644
 @@ -159,6 +161,18 @@ void YogaStylableProps::setProp(
      REBUILD_FIELD_YG_EDGES(padding, setPadding, "padding", "");
      REBUILD_FIELD_YG_EDGES(border, setBorder, "border", "Width");
- 
+
 +    // Grid Container Properties
 +    REBUILD_FIELD_SWITCH_CASE_YSP(gridTemplateColumns, setGridTemplateColumns);
 +    REBUILD_FIELD_SWITCH_CASE_YSP(gridTemplateRows, setGridTemplateRows);
@@ -214,7 +266,7 @@ index 0e2529c..7020e4a 100644
      RAW_SET_PROP_SWITCH_CASE(insetBlockEnd, "insetBlockEnd");
      RAW_SET_PROP_SWITCH_CASE(insetBlockStart, "insetBlockStart");
 diff --git a/node_modules/react-native/ReactCommon/react/renderer/components/view/conversions.h b/node_modules/react-native/ReactCommon/react/renderer/components/view/conversions.h
-index b39e27f..bf039a0 100644
+index b39e27fe4a8c6a..dddbf76da51903 100644
 --- a/node_modules/react-native/ReactCommon/react/renderer/components/view/conversions.h
 +++ b/node_modules/react-native/ReactCommon/react/renderer/components/view/conversions.h
 @@ -30,6 +30,8 @@
@@ -234,7 +286,7 @@ index b39e27f..bf039a0 100644
 +      return DisplayType::Grid;
    }
  }
- 
+
 @@ -422,6 +426,10 @@ inline void fromRawValue(const PropsParserContext &context, const RawValue &valu
      result = yoga::Display::Contents;
      return;
@@ -245,11 +297,11 @@ index b39e27f..bf039a0 100644
 +  }
    LOG(ERROR) << "Could not parse yoga::Display: " << stringValue;
  }
- 
-@@ -1516,4 +1524,135 @@ inline std::string toString(const Transform &transform)
+
+@@ -1516,4 +1524,141 @@ inline std::string toString(const Transform &transform)
  }
  #endif
- 
+
 +// Grid Track List conversion - parses CSS grid track syntax like "100 1fr auto 50%"
 +inline void fromRawValue(
 +    const PropsParserContext& context,
@@ -257,10 +309,16 @@ index b39e27f..bf039a0 100644
 +    yoga::GridTrackList& result) {
 +  result.clear();
 +
++  printf("[GRID CONV] fromRawValue for GridTrackList called\n");
++  printf("[GRID CONV] value.hasType<std::vector<RawValue>>() = %d\n", value.hasType<std::vector<RawValue>>());
++
 +  if (value.hasType<std::vector<RawValue>>()) {
 +    auto tracks = (std::vector<RawValue>)value;
++    printf("[GRID CONV] tracks.size() = %zu\n", tracks.size());
 +    for (const auto& track : tracks) {
 +      yoga::GridTrackSize trackSize;
++      printf("[GRID CONV] track.hasType<Float>() = %d, hasType<int>() = %d, hasType<double>() = %d\n",
++             track.hasType<Float>(), track.hasType<int>(), track.hasType<double>());
 +
 +      if (track.hasType<Float>()) {
 +        // Fixed pixel value
@@ -283,6 +341,38 @@ index b39e27f..bf039a0 100644
 +          float fr = std::stof(trackStr.substr(0, trackStr.size() - 2));
 +          trackSize.minSizingFunction = yoga::StyleSizeLength::ofAuto();
 +          trackSize.maxSizingFunction = yoga::StyleSizeLength::stretch(fr);
++        } else if (track.hasType<std::unordered_map<std::string, RawValue>>()) {
++          // minmax object: {min: x, max: y}
++          auto minmax = (std::unordered_map<std::string, RawValue>)track;
++          // Parse min and max values
++          if (minmax.count("min")) {
++            auto& minVal = minmax.at("min");
++            if (minVal.hasType<Float>()) {
++              trackSize.minSizingFunction = yoga::StyleSizeLength::points((float)(Float)minVal);
++            } else if (minVal.hasType<std::string>()) {
++              auto minStr = (std::string)minVal;
++              if (minStr == "auto") {
++                trackSize.minSizingFunction = yoga::StyleSizeLength::ofAuto();
++              } else if (minStr.back() == '%') {
++                trackSize.minSizingFunction = yoga::StyleSizeLength::percent(std::stof(minStr.substr(0, minStr.size() - 1)));
++              }
++            }
++          }
++          if (minmax.count("max")) {
++            auto& maxVal = minmax.at("max");
++            if (maxVal.hasType<Float>()) {
++              trackSize.maxSizingFunction = yoga::StyleSizeLength::points((float)(Float)maxVal);
++            } else if (maxVal.hasType<std::string>()) {
++              auto maxStr = (std::string)maxVal;
++              if (maxStr == "auto") {
++                trackSize.maxSizingFunction = yoga::StyleSizeLength::ofAuto();
++              } else if (maxStr.back() == '%') {
++                trackSize.maxSizingFunction = yoga::StyleSizeLength::percent(std::stof(maxStr.substr(0, maxStr.size() - 1)));
++              } else if (maxStr.size() > 2 && maxStr.substr(maxStr.size() - 2) == "fr") {
++                trackSize.maxSizingFunction = yoga::StyleSizeLength::stretch(std::stof(maxStr.substr(0, maxStr.size() - 2)));
++              }
++            }
++          }
 +        } else {
 +          // Try parsing as number (px without unit)
 +          try {
@@ -292,38 +382,6 @@ index b39e27f..bf039a0 100644
 +          } catch (...) {
 +            LOG(ERROR) << "Could not parse grid track value: " << trackStr;
 +            continue;
-+          }
-+        }
-+      } else if (track.hasType<std::unordered_map<std::string, RawValue>>()) {
-+        // minmax object: {min: x, max: y}
-+        auto minmax = (std::unordered_map<std::string, RawValue>)track;
-+        // Parse min and max values
-+        if (minmax.count("min")) {
-+          auto& minVal = minmax.at("min");
-+          if (minVal.hasType<Float>()) {
-+            trackSize.minSizingFunction = yoga::StyleSizeLength::points((float)(Float)minVal);
-+          } else if (minVal.hasType<std::string>()) {
-+            auto minStr = (std::string)minVal;
-+            if (minStr == "auto") {
-+              trackSize.minSizingFunction = yoga::StyleSizeLength::ofAuto();
-+            } else if (minStr.back() == '%') {
-+              trackSize.minSizingFunction = yoga::StyleSizeLength::percent(std::stof(minStr.substr(0, minStr.size() - 1)));
-+            }
-+          }
-+        }
-+        if (minmax.count("max")) {
-+          auto& maxVal = minmax.at("max");
-+          if (maxVal.hasType<Float>()) {
-+            trackSize.maxSizingFunction = yoga::StyleSizeLength::points((float)(Float)maxVal);
-+          } else if (maxVal.hasType<std::string>()) {
-+            auto maxStr = (std::string)maxVal;
-+            if (maxStr == "auto") {
-+              trackSize.maxSizingFunction = yoga::StyleSizeLength::ofAuto();
-+            } else if (maxStr.back() == '%') {
-+              trackSize.maxSizingFunction = yoga::StyleSizeLength::percent(std::stof(maxStr.substr(0, maxStr.size() - 1)));
-+            } else if (maxStr.size() > 2 && maxStr.substr(maxStr.size() - 2) == "fr") {
-+              trackSize.maxSizingFunction = yoga::StyleSizeLength::stretch(std::stof(maxStr.substr(0, maxStr.size() - 2)));
-+            }
 +          }
 +        }
 +      }
@@ -383,13 +441,13 @@ index b39e27f..bf039a0 100644
 +
  } // namespace facebook::react
 diff --git a/node_modules/react-native/ReactCommon/react/renderer/components/view/propsConversions.h b/node_modules/react-native/ReactCommon/react/renderer/components/view/propsConversions.h
-index 410fde1..6ea3bd3 100644
+index 410fde1b56df0c..6ea3bd35e8acf6 100644
 --- a/node_modules/react-native/ReactCommon/react/renderer/components/view/propsConversions.h
 +++ b/node_modules/react-native/ReactCommon/react/renderer/components/view/propsConversions.h
 @@ -362,6 +362,28 @@ convertRawProp(const PropsParserContext &context, const RawProps &rawProps, cons
    yogaStyle.setBoxSizing(
        convertRawProp(context, rawProps, "boxSizing", sourceValue.boxSizing(), yogaStyle.boxSizing()));
- 
+
 +  // Grid Container Properties
 +  const auto* gridColsRaw = rawProps.at("gridTemplateColumns", nullptr, nullptr);
 +  yogaStyle.setGridTemplateColumns(
@@ -414,9 +472,9 @@ index 410fde1..6ea3bd3 100644
 +
    return yogaStyle;
  }
- 
+
 diff --git a/node_modules/react-native/ReactCommon/react/renderer/core/LayoutMetrics.cpp b/node_modules/react-native/ReactCommon/react/renderer/core/LayoutMetrics.cpp
-index a7add9f..05e6486 100644
+index a7add9fd041db9..05e64862e2c20b 100644
 --- a/node_modules/react-native/ReactCommon/react/renderer/core/LayoutMetrics.cpp
 +++ b/node_modules/react-native/ReactCommon/react/renderer/core/LayoutMetrics.cpp
 @@ -46,7 +46,8 @@ std::vector<DebugStringConvertibleObject> getDebugProps(
@@ -430,7 +488,7 @@ index a7add9f..05e6486 100644
         .value = object.layoutDirection == LayoutDirection::Undefined
             ? "Undefined"
 diff --git a/node_modules/react-native/ReactCommon/react/renderer/core/LayoutPrimitives.h b/node_modules/react-native/ReactCommon/react/renderer/core/LayoutPrimitives.h
-index d2e50ff..f5ac9f0 100644
+index d2e50ff7355335..f5ac9f04f09c70 100644
 --- a/node_modules/react-native/ReactCommon/react/renderer/core/LayoutPrimitives.h
 +++ b/node_modules/react-native/ReactCommon/react/renderer/core/LayoutPrimitives.h
 @@ -20,6 +20,7 @@ enum class DisplayType {
@@ -439,10 +497,10 @@ index d2e50ff..f5ac9f0 100644
    Contents = 2,
 +  Grid = 3,
  };
- 
+
  enum class PositionType {
 diff --git a/node_modules/react-native/ReactCommon/react/renderer/core/conversions.h b/node_modules/react-native/ReactCommon/react/renderer/core/conversions.h
-index 7479617..d40427c 100644
+index 74796174353af2..d40427c40ded4b 100644
 --- a/node_modules/react-native/ReactCommon/react/renderer/core/conversions.h
 +++ b/node_modules/react-native/ReactCommon/react/renderer/core/conversions.h
 @@ -44,6 +44,8 @@ inline int toInt(const DisplayType &displayType)
@@ -453,7 +511,7 @@ index 7479617..d40427c 100644
 +      return 3;
    }
  }
- 
+
 @@ -56,6 +58,8 @@ inline std::string toString(const DisplayType &displayType)
        return "flex";
      case DisplayType::Contents:
@@ -462,9 +520,9 @@ index 7479617..d40427c 100644
 +      return "grid";
    }
  }
- 
+
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/YGEnums.cpp b/node_modules/react-native/ReactCommon/yoga/yoga/YGEnums.cpp
-index 4bdace6..7a90b22 100644
+index 4bdace6b7a5e90..7a90b2247e0311 100644
 --- a/node_modules/react-native/ReactCommon/yoga/yoga/YGEnums.cpp
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/YGEnums.cpp
 @@ -29,6 +29,10 @@ const char* YGAlignToString(const YGAlign value) {
@@ -490,7 +548,7 @@ index 4bdace6..7a90b22 100644
 @@ -153,8 +159,26 @@ const char* YGGutterToString(const YGGutter value) {
    return "unknown";
  }
- 
+
 +const char* YGGridTrackTypeToString(const YGGridTrackType value) {
 +  switch (value) {
 +    case YGGridTrackTypeAuto:
@@ -528,7 +586,7 @@ index 4bdace6..7a90b22 100644
    return "unknown";
  }
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/YGEnums.h b/node_modules/react-native/ReactCommon/yoga/yoga/YGEnums.h
-index bb83bcf..1c70257 100644
+index bb83bcfac949fa..1c70257fcb3d32 100644
 --- a/node_modules/react-native/ReactCommon/yoga/yoga/YGEnums.h
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/YGEnums.h
 @@ -22,7 +22,9 @@ YG_ENUM_DECL(
@@ -539,7 +597,7 @@ index bb83bcf..1c70257 100644
 +    YGAlignSpaceEvenly,
 +    YGAlignStart,
 +    YGAlignEnd)
- 
+
  YG_ENUM_DECL(
      YGBoxSizing,
 @@ -44,7 +46,8 @@ YG_ENUM_DECL(
@@ -549,13 +607,13 @@ index bb83bcf..1c70257 100644
 -    YGDisplayContents)
 +    YGDisplayContents,
 +    YGDisplayGrid)
- 
+
  YG_ENUM_DECL(
      YGEdge,
 @@ -85,14 +88,26 @@ YG_ENUM_DECL(
      YGGutterRow,
      YGGutterAll)
- 
+
 +YG_ENUM_DECL(
 +    YGGridTrackType,
 +    YGGridTrackTypeAuto,
@@ -577,17 +635,312 @@ index bb83bcf..1c70257 100644
 +    YGJustifyStretch,
 +    YGJustifyStart,
 +    YGJustifyEnd)
- 
+
  YG_ENUM_DECL(
      YGLogLevel,
+diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/YGGridTrackList.cpp b/node_modules/react-native/ReactCommon/yoga/yoga/YGGridTrackList.cpp
+new file mode 100644
+index 00000000000000..4c148e56fed70e
+--- /dev/null
++++ b/node_modules/react-native/ReactCommon/yoga/yoga/YGGridTrackList.cpp
+@@ -0,0 +1,186 @@
++/*
++ * Copyright (c) Meta Platforms, Inc. and affiliates.
++ *
++ * This source code is licensed under the MIT license found in the
++ * LICENSE file in the root directory of this source tree.
++ */
++
++#include <yoga/YGGridTrackList.h>
++#include <yoga/node/Node.h>
++#include <yoga/style/GridTrack.h>
++#include <yoga/style/StyleSizeLength.h>
++#include <vector>
++
++using namespace facebook::yoga;
++
++// Internal representation of a grid track value
++struct YGGridTrackValue {
++  enum class Type {
++    Points,
++    Percent,
++    Fr,
++    Auto,
++    MinMax
++  };
++
++  Type type;
++  float value;
++  YGGridTrackValue* minValue;
++  YGGridTrackValue* maxValue;
++
++  YGGridTrackValue(Type t, float v = 0.0f)
++      : type(t), value(v), minValue(nullptr), maxValue(nullptr) {}
++
++  YGGridTrackValue(YGGridTrackValue* min, YGGridTrackValue* max)
++      : type(Type::MinMax),
++        value(0.0f),
++        minValue(min),
++        maxValue(max) {}
++
++  ~YGGridTrackValue() {
++    // MinMax owns its min/max values
++    if (type == Type::MinMax) {
++      delete minValue;
++      delete maxValue;
++    }
++  }
++
++  StyleSizeLength toStyleSizeLength() const {
++    switch (type) {
++      case Type::Points:
++        return StyleSizeLength::points(value);
++      case Type::Percent:
++        return StyleSizeLength::percent(value);
++      case Type::Fr:
++        return StyleSizeLength::stretch(value);
++      case Type::Auto:
++        return StyleSizeLength::ofAuto();
++      case Type::MinMax:
++        // MinMax should not call this, it needs special handling
++        return StyleSizeLength::ofAuto();
++    }
++    return StyleSizeLength::ofAuto();
++  }
++};
++
++// Internal representation of a grid track list
++struct YGGridTrackList {
++  std::vector<YGGridTrackValue*> tracks;
++
++  ~YGGridTrackList() {
++    for (auto* track : tracks) {
++      delete track;
++    }
++  }
++
++  GridTrackList toGridTrackList() const {
++    GridTrackList result;
++    result.reserve(tracks.size());
++
++    for (auto* track : tracks) {
++      if (track->type == YGGridTrackValue::Type::MinMax) {
++        auto min = track->minValue->toStyleSizeLength();
++        auto max = track->maxValue->toStyleSizeLength();
++        result.push_back(GridTrackSize::minmax(min, max));
++      } else {
++        switch (track->type) {
++          case YGGridTrackValue::Type::Points:
++            result.push_back(GridTrackSize::length(track->value));
++            break;
++          case YGGridTrackValue::Type::Percent:
++            result.push_back(GridTrackSize::percent(track->value));
++            break;
++          case YGGridTrackValue::Type::Fr:
++            result.push_back(GridTrackSize::fr(track->value));
++            break;
++          case YGGridTrackValue::Type::Auto:
++            result.push_back(GridTrackSize::auto_());
++            break;
++          case YGGridTrackValue::Type::MinMax:
++            // Already handled above
++            break;
++        }
++      }
++    }
++
++    return result;
++  }
++};
++
++YGGridTrackListRef YGGridTrackListCreate() {
++  return new YGGridTrackList();
++}
++
++void YGGridTrackListFree(YGGridTrackListRef list) {
++  delete list;
++}
++
++void YGGridTrackListAddTrack(
++    YGGridTrackListRef list,
++    YGGridTrackValueRef trackValue) {
++  if (list && trackValue) {
++    list->tracks.push_back(trackValue);
++  }
++}
++
++YGGridTrackValueRef YGPoints(float points) {
++  return new YGGridTrackValue(YGGridTrackValue::Type::Points, points);
++}
++
++YGGridTrackValueRef YGPercent(float percent) {
++  return new YGGridTrackValue(YGGridTrackValue::Type::Percent, percent);
++}
++
++YGGridTrackValueRef YGFr(float fr) {
++  return new YGGridTrackValue(YGGridTrackValue::Type::Fr, fr);
++}
++
++YGGridTrackValueRef YGAuto() {
++  return new YGGridTrackValue(YGGridTrackValue::Type::Auto);
++}
++
++YGGridTrackValueRef YGMinMax(
++    YGGridTrackValueRef min,
++    YGGridTrackValueRef max) {
++  return new YGGridTrackValue(min, max);
++}
++
++void YGNodeStyleSetGridTemplateRows(
++    YGNodeRef node,
++    YGGridTrackListRef trackList) {
++  if (node && trackList) {
++    auto* n = resolveRef(node);
++    n->style().setGridTemplateRows(trackList->toGridTrackList());
++    n->markDirtyAndPropagate();
++  }
++}
++
++void YGNodeStyleSetGridTemplateColumns(
++    YGNodeRef node,
++    YGGridTrackListRef trackList) {
++  if (node && trackList) {
++    auto* n = resolveRef(node);
++    n->style().setGridTemplateColumns(trackList->toGridTrackList());
++    n->markDirtyAndPropagate();
++  }
++}
++
++void YGNodeStyleSetGridAutoRows(
++    YGNodeRef node,
++    YGGridTrackListRef trackList) {
++  if (node && trackList) {
++    auto* n = resolveRef(node);
++    n->style().setGridAutoRows(trackList->toGridTrackList());
++    n->markDirtyAndPropagate();
++  }
++}
++
++void YGNodeStyleSetGridAutoColumns(
++    YGNodeRef node,
++    YGGridTrackListRef trackList) {
++  if (node && trackList) {
++    auto* n = resolveRef(node);
++    n->style().setGridAutoColumns(trackList->toGridTrackList());
++    n->markDirtyAndPropagate();
++  }
++}
+diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/YGGridTrackList.h b/node_modules/react-native/ReactCommon/yoga/yoga/YGGridTrackList.h
+new file mode 100644
+index 00000000000000..c3fedfa33a23fe
+--- /dev/null
++++ b/node_modules/react-native/ReactCommon/yoga/yoga/YGGridTrackList.h
+@@ -0,0 +1,97 @@
++/*
++ * Copyright (c) Meta Platforms, Inc. and affiliates.
++ *
++ * This source code is licensed under the MIT license found in the
++ * LICENSE file in the root directory of this source tree.
++ */
++
++#pragma once
++
++#include <yoga/YGMacros.h>
++#include <yoga/YGNode.h>
++
++YG_EXTERN_C_BEGIN
++
++/**
++ * Opaque handle to a grid track list for building grid-template-rows/columns.
++ */
++typedef struct YGGridTrackList* YGGridTrackListRef;
++
++/**
++ * Opaque handle to a grid track value.
++ */
++typedef struct YGGridTrackValue* YGGridTrackValueRef;
++
++/**
++ * Create a new grid track list.
++ */
++YG_EXPORT YGGridTrackListRef YGGridTrackListCreate(void);
++
++/**
++ * Free a grid track list.
++ */
++YG_EXPORT void YGGridTrackListFree(YGGridTrackListRef list);
++
++/**
++ * Add a track to the grid track list.
++ */
++YG_EXPORT void YGGridTrackListAddTrack(
++    YGGridTrackListRef list,
++    YGGridTrackValueRef trackValue);
++
++/**
++ * Create a grid track value with a points (px) length.
++ */
++YG_EXPORT YGGridTrackValueRef YGPoints(float points);
++
++/**
++ * Create a grid track value with a percentage length.
++ */
++YG_EXPORT YGGridTrackValueRef YGPercent(float percent);
++
++/**
++ * Create a grid track value with a flexible (fr) length.
++ */
++YG_EXPORT YGGridTrackValueRef YGFr(float fr);
++
++/**
++ * Create a grid track value with auto sizing.
++ */
++YG_EXPORT YGGridTrackValueRef YGAuto(void);
++
++/**
++ * Create a grid track value with minmax(min, max) sizing.
++ */
++YG_EXPORT YGGridTrackValueRef YGMinMax(
++    YGGridTrackValueRef min,
++    YGGridTrackValueRef max);
++
++/**
++ * Set the grid-template-rows property on a node.
++ */
++YG_EXPORT void YGNodeStyleSetGridTemplateRows(
++    YGNodeRef node,
++    YGGridTrackListRef trackList);
++
++/**
++ * Set the grid-template-columns property on a node.
++ */
++YG_EXPORT void YGNodeStyleSetGridTemplateColumns(
++    YGNodeRef node,
++    YGGridTrackListRef trackList);
++
++/**
++ * Set the grid-auto-rows property on a node.
++ */
++YG_EXPORT void YGNodeStyleSetGridAutoRows(
++    YGNodeRef node,
++    YGGridTrackListRef trackList);
++
++/**
++ * Set the grid-auto-columns property on a node.
++ */
++YG_EXPORT void YGNodeStyleSetGridAutoColumns(
++    YGNodeRef node,
++    YGGridTrackListRef trackList);
++
++YG_EXTERN_C_END
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/YGNodeStyle.cpp b/node_modules/react-native/ReactCommon/yoga/yoga/YGNodeStyle.cpp
-index 4e77405..fd3c608 100644
+index 4e77405b6c7dc0..fd3c608a5d6ec3 100644
 --- a/node_modules/react-native/ReactCommon/yoga/yoga/YGNodeStyle.cpp
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/YGNodeStyle.cpp
 @@ -74,6 +74,28 @@ YGJustify YGNodeStyleGetJustifyContent(const YGNodeConstRef node) {
    return unscopedEnum(resolveRef(node)->style().justifyContent());
  }
- 
+
 +void YGNodeStyleSetJustifyItems(
 +    const YGNodeRef node,
 +    const YGJustify justifyItems) {
@@ -621,7 +974,7 @@ index 4e77405..fd3c608 100644
 +                                            : Style::DefaultFlexShrink)
        : node->style().flexShrink().unwrap();
  }
- 
+
 @@ -503,3 +525,85 @@ void YGNodeStyleSetMaxHeightStretch(const YGNodeRef node) {
  YGValue YGNodeStyleGetMaxHeight(const YGNodeConstRef node) {
    return (YGValue)resolveRef(node)->style().maxDimension(Dimension::Height);
@@ -709,21 +1062,21 @@ index 4e77405..fd3c608 100644
 +  return gridLine.isInteger() ? gridLine.integer : 0;
 +}
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/YGNodeStyle.h b/node_modules/react-native/ReactCommon/yoga/yoga/YGNodeStyle.h
-index 21b8326..1cc1200 100644
+index 21b8326d854659..1cc12002e62b2f 100644
 --- a/node_modules/react-native/ReactCommon/yoga/yoga/YGNodeStyle.h
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/YGNodeStyle.h
 @@ -8,7 +8,6 @@
  #pragma once
- 
+
  #include <stddef.h>
 -
  #include <yoga/YGNode.h>
  #include <yoga/YGValue.h>
- 
+
 @@ -29,6 +28,16 @@ YG_EXPORT void YGNodeStyleSetJustifyContent(
      YGJustify justifyContent);
  YG_EXPORT YGJustify YGNodeStyleGetJustifyContent(YGNodeConstRef node);
- 
+
 +YG_EXPORT void YGNodeStyleSetJustifyItems(
 +    YGNodeRef node,
 +    YGJustify justifyItems);
@@ -736,11 +1089,11 @@ index 21b8326..1cc1200 100644
 +
  YG_EXPORT void YGNodeStyleSetAlignContent(YGNodeRef node, YGAlign alignContent);
  YG_EXPORT YGAlign YGNodeStyleGetAlignContent(YGNodeConstRef node);
- 
+
 @@ -148,4 +157,25 @@ YG_EXPORT YGValue YGNodeStyleGetMaxHeight(YGNodeConstRef node);
  YG_EXPORT void YGNodeStyleSetAspectRatio(YGNodeRef node, float aspectRatio);
  YG_EXPORT float YGNodeStyleGetAspectRatio(YGNodeConstRef node);
- 
+
 +// Grid Item Properties
 +YG_EXPORT void YGNodeStyleSetGridColumnStart(YGNodeRef node, int gridColumnStart);
 +YG_EXPORT void YGNodeStyleSetGridColumnStartAuto(YGNodeRef node);
@@ -764,7 +1117,7 @@ index 21b8326..1cc1200 100644
 +
  YG_EXTERN_C_END
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/AbsoluteLayout.cpp b/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/AbsoluteLayout.cpp
-index b2d8d8d..ddb8fa8 100644
+index b2d8d8dbefcd1a..ddb8fa8628edc3 100644
 --- a/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/AbsoluteLayout.cpp
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/AbsoluteLayout.cpp
 @@ -91,10 +91,14 @@ static void justifyAbsoluteChild(
@@ -796,7 +1149,7 @@ index b2d8d8d..ddb8fa8 100644
            parent, child, direction, crossAxis, containingBlockWidth);
        break;
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/Align.h b/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/Align.h
-index bb21fe5..5e008fc 100644
+index bb21fe5dcaf0a2..5e008fc12f7870 100644
 --- a/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/Align.h
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/Align.h
 @@ -20,12 +20,24 @@ inline Align resolveChildAlignment(
@@ -805,15 +1158,15 @@ index bb21fe5..5e008fc 100644
        : child->style().alignSelf();
 -  if (align == Align::Baseline && isColumn(node->style().flexDirection())) {
 +
-+  if (node->style().display() == Display::Flex 
-+      && align == Align::Baseline 
++  if (node->style().display() == Display::Flex
++      && align == Align::Baseline
 +      && isColumn(node->style().flexDirection())) {
      return Align::FlexStart;
    }
 +
    return align;
  }
- 
+
 +inline Justify resolveChildJustification(
 +    const yoga::Node* node,
 +    const yoga::Node* child) {
@@ -826,7 +1179,7 @@ index bb21fe5..5e008fc 100644
   * Fallback alignment to use on overflow
   * https://www.w3.org/TR/css-align-3/#distribution-values
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/CalculateLayout.cpp b/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/CalculateLayout.cpp
-index fcc0531..f8e02ab 100644
+index fcc05313549221..f8e02ab7056e3a 100644
 --- a/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/CalculateLayout.cpp
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/CalculateLayout.cpp
 @@ -30,12 +30,13 @@
@@ -834,11 +1187,11 @@ index fcc0531..f8e02ab 100644
  #include <yoga/numeric/Comparison.h>
  #include <yoga/numeric/FloatOptional.h>
 +#include <yoga/algorithm/grid/GridLayout.h>
- 
+
  namespace facebook::yoga {
- 
+
  std::atomic<uint32_t> gCurrentGenerationCount(0);
- 
+
 -static void constrainMaxSizeForMode(
 +void constrainMaxSizeForMode(
      const yoga::Node* node,
@@ -847,7 +1200,7 @@ index fcc0531..f8e02ab 100644
 @@ -468,7 +469,7 @@ static bool measureNodeWithFixedSize(
    return false;
  }
- 
+
 -static void zeroOutLayoutRecursively(yoga::Node* const node) {
 +void zeroOutLayoutRecursively(yoga::Node* const node) {
    node->getLayout() = {};
@@ -856,7 +1209,7 @@ index fcc0531..f8e02ab 100644
 @@ -480,7 +481,7 @@ static void zeroOutLayoutRecursively(yoga::Node* const node) {
    }
  }
- 
+
 -static void cleanupContentsNodesRecursively(yoga::Node* const node) {
 +void cleanupContentsNodesRecursively(yoga::Node* const node) {
    if (node->hasContentsChildren()) [[unlikely]] {
@@ -865,7 +1218,7 @@ index fcc0531..f8e02ab 100644
 @@ -498,7 +499,7 @@ static void cleanupContentsNodesRecursively(yoga::Node* const node) {
    }
  }
- 
+
 -static float calculateAvailableInnerDimension(
 +float calculateAvailableInnerDimension(
      const yoga::Node* const node,
@@ -885,7 +1238,7 @@ index fcc0531..f8e02ab 100644
 @@ -1367,6 +1372,24 @@ static void calculateLayoutImpl(
    // current node as they will not be traversed
    cleanupContentsNodesRecursively(node);
- 
+
 +  if (node->style().display() == Display::Grid) {
 +    calculateGridLayoutInternal(
 +        node,
@@ -926,13 +1279,13 @@ index fcc0531..f8e02ab 100644
            }
          }
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/CalculateLayout.h b/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/CalculateLayout.h
-index 5e6884e..86b3c61 100644
+index 5e6884ec1a49a1..86b3c61afe1f05 100644
 --- a/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/CalculateLayout.h
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/CalculateLayout.h
 @@ -35,4 +35,26 @@ bool calculateLayoutInternal(
      uint32_t depth,
      uint32_t generationCount);
- 
+
 +void constrainMaxSizeForMode(
 +    const yoga::Node* node,
 +    Direction direction,
@@ -958,10 +1311,10 @@ index 5e6884e..86b3c61 100644
  } // namespace facebook::yoga
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/AutoPlacement.h b/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/AutoPlacement.h
 new file mode 100644
-index 0000000..45db436
+index 00000000000000..34b0a944896509
 --- /dev/null
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/AutoPlacement.h
-@@ -0,0 +1,419 @@
+@@ -0,0 +1,536 @@
 +/*
 + * Copyright (c) Meta Platforms, Inc. and affiliates.
 + *
@@ -978,7 +1331,6 @@ index 0000000..45db436
 +#include <unordered_set>
 +#include <yoga/node/Node.h>
 +#include <yoga/style/GridLine.h>
-+#include <yoga/style/GridTrack.h>
 +
 +namespace facebook::yoga {
 +
@@ -998,7 +1350,7 @@ index 0000000..45db436
 +  }
 +
 +  bool isOccupied(int32_t row, int32_t col) const {
-+    return cells.find(cellKey(row, col)) != cells.end();
++    return cells.contains(cellKey(row, col));
 +  }
 +
 +  bool hasOverlap(int32_t rowStart, int32_t rowEnd, int32_t colStart, int32_t colEnd) const {
@@ -1017,7 +1369,7 @@ index 0000000..45db436
 +  int32_t start = 0;
 +  int32_t end = 0;
 +  int32_t span = 1;
-+
++  // https://www.w3.org/TR/css-grid-1/#grid-placement-errors
 +  static GridItemTrackPlacement resolveLinePlacement(const GridLine& startLine, const GridLine& endLine, int32_t explicitLineCount) {
 +    GridItemTrackPlacement placement;
 +
@@ -1025,60 +1377,83 @@ index 0000000..45db436
 +      return lineValue < 0 ? explicitLineCount + lineValue + 1 : lineValue;
 +    };
 +
++    // If the placement for a grid item contains two lines
 +    if (startLine.type == GridLineType::Integer && endLine.type == GridLineType::Integer) {
++      // if lines are negative, we count it from the last line. e.g. -1 is the last line
 +      auto normalizedStartLine = resolveNegativeLineValue(startLine.integer, explicitLineCount);
 +      auto normalizedEndLine = resolveNegativeLineValue(endLine.integer, explicitLineCount);
++      // and the start line is further end-ward than the end line, swap the two lines.
 +      if (normalizedStartLine > normalizedEndLine) {
-+        placement.start = normalizedEndLine;
-+        placement.end = normalizedStartLine;
-+        placement.span = placement.end - placement.start;
-+      } else if (normalizedStartLine == normalizedEndLine) {
-+        placement.start = normalizedStartLine;
-+        placement.end = 0;
-+        placement.span = 1;
-+      } else {
-+        placement.start = normalizedStartLine;
-+        placement.end = normalizedEndLine;
-+        placement.span = placement.end - placement.start;
++          placement.start = normalizedEndLine;
++          placement.end = normalizedStartLine;
++          placement.span = placement.end - placement.start;
 +      }
-+    } else if (startLine.type == GridLineType::Span && endLine.type == GridLineType::Span) {
++      // If the start line is equal to the end line, remove the end line.
++      else if (normalizedStartLine == normalizedEndLine) {
++          placement.start = normalizedStartLine;
++          placement.end = 0;
++          placement.span = 1;
++      }
++      else {
++          placement.start = normalizedStartLine;
++          placement.end = normalizedEndLine;
++          placement.span = placement.end - placement.start;
++      }
++    }
++    // If the placement contains two spans, remove the one contributed by the end grid-placement property.
++    else if (startLine.type == GridLineType::Span && endLine.type == GridLineType::Span) {
 +      placement.start = 0;
 +      placement.end = 0;
 +      placement.span = startLine.integer;
-+    } else if (startLine.type == GridLineType::Integer && endLine.type == GridLineType::Span) {
++    }
++
++    else if (startLine.type == GridLineType::Integer && endLine.type == GridLineType::Span) {
 +      auto normalizedStartLine = resolveNegativeLineValue(startLine.integer, explicitLineCount);
 +      placement.start = normalizedStartLine;
 +      placement.span = endLine.integer;
 +      placement.end = placement.start + placement.span;
-+    } else if (startLine.type == GridLineType::Span && endLine.type == GridLineType::Integer) {
++    }
++
++    else if (startLine.type == GridLineType::Span && endLine.type == GridLineType::Integer) {
 +      auto normalizedEndLine = resolveNegativeLineValue(endLine.integer, explicitLineCount);
 +      placement.end = normalizedEndLine;
 +      placement.span = startLine.integer;
 +      placement.start = placement.end - placement.span;
-+    } else if (startLine.type == GridLineType::Integer) {
++    }
++
++    else if (startLine.type == GridLineType::Integer) {
 +      auto normalizedStartLine = resolveNegativeLineValue(startLine.integer, explicitLineCount);
 +      placement.start = normalizedStartLine;
 +      placement.span = 1;
 +      placement.end = placement.start + placement.span;
-+    } else if (startLine.type == GridLineType::Span) {
++    }
++
++    else if (startLine.type == GridLineType::Span) {
 +      placement.span = startLine.integer;
 +      placement.start = 0;
 +      placement.end = 0;
-+    } else if (endLine.type == GridLineType::Integer) {
++    }
++
++    else if (endLine.type == GridLineType::Integer) {
 +      auto normalizedEndLine = resolveNegativeLineValue(endLine.integer, explicitLineCount);
 +      placement.end = normalizedEndLine;
 +      placement.span = 1;
 +      placement.start = placement.end - placement.span;
-+    } else if (endLine.type == GridLineType::Span) {
++    }
++
++    else if (endLine.type == GridLineType::Span) {
 +      placement.span = endLine.integer;
 +      placement.start = 0;
 +      placement.end = 0;
-+    } else {
++    }
++
++    else {
 +      placement.start = 0;
 +      placement.end = 0;
 +      placement.span = 1;
 +    }
 +
++    // we want 0 based indexing, so we subtract 1. Negative values will imply auto implicit grid lines
 +    placement.start = placement.start - 1;
 +    placement.end = placement.end - 1;
 +
@@ -1092,13 +1467,14 @@ index 0000000..45db436
 +    int32_t columnEnd;
 +    int32_t rowStart;
 +    int32_t rowEnd;
++
 +    yoga::Node* node;
 +
 +    bool overlaps(const AutoPlacementItem& other) const {
-+      return columnStart < other.columnEnd && columnEnd > other.columnStart &&
-+             rowStart < other.rowEnd && rowEnd > other.rowStart;
++      return columnStart < other.columnEnd && columnEnd > other.columnStart && rowStart < other.rowEnd && rowEnd > other.rowStart;
 +    }
 +  };
++
 +
 +  std::vector<AutoPlacementItem> gridItems;
 +  int32_t minColumnStart;
@@ -1117,7 +1493,14 @@ index 0000000..45db436
 +    int32_t maxRowEnd = static_cast<int32_t>(node->style().gridTemplateRows().size());
 +    OccupancyGrid occupancy;
 +
++    // function to push back a grid item placement and record the min/max column/row start/end
 +    auto recordGridArea = [&](AutoPlacementItem& gridItemArea) {
++      yoga::assertFatal(
++          gridItemArea.columnEnd > gridItemArea.columnStart,
++          "Grid item column end must be greater than column start");
++      yoga::assertFatal(
++          gridItemArea.rowEnd > gridItemArea.rowStart,
++          "Grid item row end must be greater than row start");
 +      gridItems.push_back(gridItemArea);
 +      placedItems.insert(gridItemArea.node);
 +      occupancy.markOccupied(gridItemArea.rowStart, gridItemArea.rowEnd, gridItemArea.columnStart, gridItemArea.columnEnd);
@@ -1130,7 +1513,9 @@ index 0000000..45db436
 +    int32_t explicitColumnLineCount = static_cast<int32_t>(node->style().gridTemplateColumns().size() + 1);
 +    int32_t explicitRowLineCount = static_cast<int32_t>(node->style().gridTemplateRows().size() + 1);
 +
-+    // Step 1: Position anything that's not auto-positioned
++    // Step 1: Position anything that's not auto-positioned.
++    // In spec level 1, span is always definite. Default is 1.
++    // So for grid position to be definite, we need either start or end to be definite.
 +    for (auto child : node->getLayoutChildren()) {
 +      if (child->style().positionType() == PositionType::Absolute || child->style().display() == Display::None) {
 +        continue;
@@ -1141,26 +1526,35 @@ index 0000000..45db436
 +      auto gridItemRowStart = child->style().gridRowStart();
 +      auto gridItemRowEnd = child->style().gridRowEnd();
 +      auto hasDefiniteColumn = gridItemColumnStart.type == GridLineType::Integer ||
-+                               gridItemColumnEnd.type == GridLineType::Integer;
++      gridItemColumnEnd.type == GridLineType::Integer;
 +      auto hasDefiniteRow = gridItemRowStart.type == GridLineType::Integer ||
-+                            gridItemRowEnd.type == GridLineType::Integer;
++      gridItemRowEnd.type == GridLineType::Integer;
++
 +      auto hasDefinitePosition = hasDefiniteColumn && hasDefiniteRow;
 +
 +      if (hasDefinitePosition) {
 +        auto columnPlacement = GridItemTrackPlacement::resolveLinePlacement(gridItemColumnStart, gridItemColumnEnd, explicitColumnLineCount);
 +        auto rowPlacement = GridItemTrackPlacement::resolveLinePlacement(gridItemRowStart, gridItemRowEnd, explicitRowLineCount);
++
++        auto columnStart = columnPlacement.start;
++        auto columnEnd = columnPlacement.end;
++
++        auto rowStart = rowPlacement.start;
++        auto rowEnd = rowPlacement.end;
++
 +        auto gridItemArea = AutoPlacementItem{
-+          columnPlacement.start,
-+          columnPlacement.end,
-+          rowPlacement.start,
-+          rowPlacement.end,
++          columnStart,
++          columnEnd,
++          rowStart,
++          rowEnd,
 +          child
 +        };
 +        recordGridArea(gridItemArea);
 +      }
 +    }
 +
-+    // Step 2: Process the items locked to a given row
++    // Step 2: Process the items locked to a given row.
++    // Definite row positions only, exclude items with definite column positions.
 +    std::unordered_map<int32_t, int32_t> rowStartToColumnStartCache;
 +    for (auto child : node->getLayoutChildren()) {
 +      if (child->style().positionType() == PositionType::Absolute || child->style().display() == Display::None) {
@@ -1172,22 +1566,32 @@ index 0000000..45db436
 +      auto gridItemRowStart = child->style().gridRowStart();
 +      auto gridItemRowEnd = child->style().gridRowEnd();
 +      auto hasDefiniteRow = gridItemRowStart.type == GridLineType::Integer ||
-+                            gridItemRowEnd.type == GridLineType::Integer;
++      gridItemRowEnd.type == GridLineType::Integer;
 +      auto hasDefiniteColumn = gridItemColumnStart.type == GridLineType::Integer ||
-+                               gridItemColumnEnd.type == GridLineType::Integer;
++      gridItemColumnEnd.type == GridLineType::Integer;
 +
 +      if (hasDefiniteRow && !hasDefiniteColumn) {
 +        auto rowPlacement = GridItemTrackPlacement::resolveLinePlacement(gridItemRowStart, gridItemRowEnd, explicitRowLineCount);
++
 +        auto rowStart = rowPlacement.start;
 +        auto rowEnd = rowPlacement.end;
-+        auto columnStart = rowStartToColumnStartCache.count(rowStart) ? rowStartToColumnStartCache[rowStart] : minColumnStart;
++
++        auto columnStart = rowStartToColumnStartCache.contains(rowStart) ?
++          rowStartToColumnStartCache[rowStart] : minColumnStart;
++
 +        auto columnPlacement = GridItemTrackPlacement::resolveLinePlacement(gridItemColumnStart, gridItemColumnEnd, explicitColumnLineCount);
 +        auto columnSpan = columnPlacement.span;
 +        auto columnEnd = columnStart + columnSpan;
 +
 +        bool placed = false;
 +        while (!placed) {
-+          auto gridItemArea = AutoPlacementItem{columnStart, columnEnd, rowStart, rowEnd, child};
++          auto gridItemArea = AutoPlacementItem{
++            columnStart,
++            columnEnd,
++            rowStart,
++            rowEnd,
++            child
++          };
 +          if (occupancy.hasOverlap(rowStart, rowEnd, columnStart, columnEnd)) {
 +            columnStart++;
 +            columnEnd = columnStart + columnSpan;
@@ -1200,7 +1604,8 @@ index 0000000..45db436
 +      }
 +    }
 +
-+    // Step 3: Determine the columns in the implicit grid
++    // Step 3: Determine the columns in the implicit grid.
++    // TODO: we dont need this loop. we can do it in above steps. But keeping it for now, to match the spec.
 +    auto largestColumnSpan = 1;
 +    for (auto child : node->getLayoutChildren()) {
 +      if (child->style().positionType() == PositionType::Absolute || child->style().display() == Display::None) {
@@ -1209,57 +1614,84 @@ index 0000000..45db436
 +
 +      auto gridItemColumnStart = child->style().gridColumnStart();
 +      auto gridItemColumnEnd = child->style().gridColumnEnd();
++
 +      auto hasDefiniteColumn = gridItemColumnStart.type == GridLineType::Integer ||
-+                               gridItemColumnEnd.type == GridLineType::Integer;
++      gridItemColumnEnd.type == GridLineType::Integer;
 +
 +      if (hasDefiniteColumn) {
 +        auto columnPlacement = GridItemTrackPlacement::resolveLinePlacement(gridItemColumnStart, gridItemColumnEnd, explicitColumnLineCount);
-+        minColumnStart = std::min(minColumnStart, columnPlacement.start);
-+        maxColumnEnd = std::max(maxColumnEnd, columnPlacement.end);
++
++        auto columnStart = columnPlacement.start;
++        auto columnEnd = columnPlacement.end;
++
++        minColumnStart = std::min(minColumnStart, columnStart);
++        maxColumnEnd = std::max(maxColumnEnd, columnEnd);
 +      } else {
 +        auto columnPlacement = GridItemTrackPlacement::resolveLinePlacement(gridItemColumnStart, gridItemColumnEnd, explicitColumnLineCount);
 +        largestColumnSpan = std::max(largestColumnSpan, columnPlacement.span);
 +      }
 +    }
 +
++    // If largest span is larger than current grid width, extend the end
 +    auto currentGridWidth = maxColumnEnd - minColumnStart;
 +    if (largestColumnSpan > currentGridWidth) {
 +      maxColumnEnd = minColumnStart + largestColumnSpan;
 +    }
 +
-+    // Step 4: Position the remaining grid items
-+    int32_t autoPlacementCursor[2] = {minColumnStart, minRowStart};
++    // Step 4: Position the remaining grid items.
++    int32_t autoPlacementCursor[2] = {
++      minColumnStart,
++      minRowStart
++    };
 +    for (auto child : node->getLayoutChildren()) {
 +      if (child->style().positionType() == PositionType::Absolute || child->style().display() == Display::None) {
 +        continue;
 +      }
 +
-+      if (placedItems.find(child) == placedItems.end()) {
++      if (!placedItems.contains(child)) {
 +        auto gridItemColumnStart = child->style().gridColumnStart();
 +        auto gridItemColumnEnd = child->style().gridColumnEnd();
 +        auto hasDefiniteColumn = gridItemColumnStart.type == GridLineType::Integer ||
-+                                 gridItemColumnEnd.type == GridLineType::Integer;
++        gridItemColumnEnd.type == GridLineType::Integer;
++
 +        auto gridItemRowStart = child->style().gridRowStart();
 +        auto gridItemRowEnd = child->style().gridRowEnd();
++        auto hasDefiniteRow = gridItemRowStart.type == GridLineType::Integer ||
++        gridItemRowEnd.type == GridLineType::Integer;
 +
 +        auto columnPlacement = GridItemTrackPlacement::resolveLinePlacement(gridItemColumnStart, gridItemColumnEnd, explicitColumnLineCount);
 +        auto rowPlacement = GridItemTrackPlacement::resolveLinePlacement(gridItemRowStart, gridItemRowEnd, explicitRowLineCount);
 +
++        // If the item has a definite column position:
 +        if (hasDefiniteColumn) {
 +          auto columnStart = columnPlacement.start;
 +          auto columnEnd = columnPlacement.end;
++
++          // Set cursor column position to item's column-start line
 +          auto previousColumnPosition = autoPlacementCursor[0];
 +          autoPlacementCursor[0] = columnStart;
++
++          // If this is less than previous column position, increment row
 +          if (autoPlacementCursor[0] < previousColumnPosition) {
 +            autoPlacementCursor[1]++;
 +          }
 +
++          // Find a row position where the item doesn't overlap occupied cells
 +          bool foundPosition = false;
 +          auto rowSpan = rowPlacement.span;
 +          while (!foundPosition) {
 +            auto proposedRowStart = autoPlacementCursor[1];
 +            auto proposedRowEnd = proposedRowStart + rowSpan;
-+            AutoPlacementItem proposedPlacement{columnStart, columnEnd, proposedRowStart, proposedRowEnd, child};
++
++            // Check for overlaps with already placed items
++            AutoPlacementItem proposedPlacement {
++              columnStart,
++              columnEnd,
++              proposedRowStart,
++              proposedRowEnd,
++              child
++            };
++
 +            if (occupancy.hasOverlap(proposedRowStart, proposedRowEnd, columnStart, columnEnd)) {
 +              autoPlacementCursor[1]++;
 +            } else {
@@ -1267,19 +1699,30 @@ index 0000000..45db436
 +              foundPosition = true;
 +            }
 +          }
-+        } else {
++        }
++
++        // If the item has an automatic grid position in both axes:
++        else if (!hasDefiniteRow && !hasDefiniteColumn) {
 +          auto itemColumnSpan = columnPlacement.span;
 +          auto itemRowSpan = rowPlacement.span;
 +
 +          bool foundPosition = false;
 +          while (!foundPosition) {
++            // Try to find a position starting from current cursor position
 +            while (autoPlacementCursor[0] + itemColumnSpan <= maxColumnEnd) {
 +              auto columnStart = autoPlacementCursor[0];
 +              auto columnEnd = columnStart + itemColumnSpan;
 +              auto rowStart = autoPlacementCursor[1];
 +              auto rowEnd = rowStart + itemRowSpan;
 +
-+              AutoPlacementItem proposedPlacement{columnStart, columnEnd, rowStart, rowEnd, child};
++              AutoPlacementItem proposedPlacement {
++                columnStart,
++                columnEnd,
++                rowStart,
++                rowEnd,
++                child
++              };
++
 +              if (occupancy.hasOverlap(rowStart, rowEnd, columnStart, columnEnd)) {
 +                autoPlacementCursor[0]++;
 +              } else {
@@ -1290,6 +1733,7 @@ index 0000000..45db436
 +            }
 +
 +            if (!foundPosition) {
++              // Cursor column position + span would overflow, move to next row
 +              autoPlacementCursor[1]++;
 +              autoPlacementCursor[0] = minColumnStart;
 +            }
@@ -1298,7 +1742,13 @@ index 0000000..45db436
 +      }
 +    }
 +
-+    return AutoPlacement{std::move(gridItems), minColumnStart, minRowStart, maxColumnEnd, maxRowEnd};
++    return AutoPlacement {
++      std::move(gridItems),
++      minColumnStart,
++      minRowStart,
++      maxColumnEnd,
++      maxRowEnd
++    };
 +  }
 +};
 +
@@ -1308,23 +1758,39 @@ index 0000000..45db436
 +  size_t rowStart;
 +  size_t rowEnd;
 +  yoga::Node* node;
++  // additional space added to align baselines
++  // https://www.w3.org/TR/css-grid-1/#algo-baseline-shims
 +  float baselineShim = 0.0f;
++  // Flags used for optimisations in TrackSizing
 +  bool crossesIntrinsicRow = false;
 +  bool crossesIntrinsicColumn = false;
 +  bool crossesFlexibleRow = false;
 +  bool crossesFlexibleColumn = false;
 +
-+  GridItem(size_t columnStart, size_t columnEnd, size_t rowStart, size_t rowEnd, yoga::Node* node, float baselineShim = 0.0f)
-+      : columnStart(columnStart), columnEnd(columnEnd), rowStart(rowStart), rowEnd(rowEnd), node(node), baselineShim(baselineShim) {}
++  GridItem(
++      size_t columnStart,
++      size_t columnEnd,
++      size_t rowStart,
++      size_t rowEnd,
++      yoga::Node* node,
++      float baselineShim = 0.0f)
++      : columnStart(columnStart),
++        columnEnd(columnEnd),
++        rowStart(rowStart),
++        rowEnd(rowEnd),
++        node(node),
++        baselineShim(baselineShim) {}
 +
-+  bool crossesIntrinsicTrack(Dimension dimension) const {
-+    return dimension == Dimension::Width ? crossesIntrinsicColumn : crossesIntrinsicRow;
-+  }
-+  bool crossesFlexibleTrack(Dimension dimension) const {
-+    return dimension == Dimension::Width ? crossesFlexibleColumn : crossesFlexibleRow;
-+  }
++    bool crossesIntrinsicTrack(Dimension dimension) const {
++      return dimension == Dimension::Width ? crossesIntrinsicColumn : crossesIntrinsicRow;
++    }
++    bool crossesFlexibleTrack(Dimension dimension) const {
++      return dimension == Dimension::Width ? crossesFlexibleColumn : crossesFlexibleRow;
++    }
 +};
 +
++// Baseline sharing groups - items grouped by their starting row for resolve intrinsic size step in TrackSizing
++// https://www.w3.org/TR/css-grid-1/#algo-baseline-shims
 +using BaselineItemGroups = std::map<size_t, std::vector<GridItem*>>;
 +
 +struct ResolvedAutoPlacement {
@@ -1335,6 +1801,8 @@ index 0000000..45db436
 +  int32_t maxColumnEnd;
 +  int32_t maxRowEnd;
 +
++  // Offset column and row so they starts at 0 index
++  // also casts start and end values from int32_t to size_t
 +  static ResolvedAutoPlacement resolveGridItemPlacements(Node* node) {
 +    auto autoPlacement = AutoPlacement::performAutoPlacement(node);
 +
@@ -1345,6 +1813,7 @@ index 0000000..45db436
 +
 +    std::vector<GridItem> resolvedAreas;
 +    resolvedAreas.reserve(autoPlacement.gridItems.size());
++
 +    BaselineItemGroups baselineGroups;
 +    auto alignItems = node->style().alignItems();
 +
@@ -1366,6 +1835,7 @@ index 0000000..45db436
 +        baselineGroups[item.rowStart].push_back(&item);
 +      }
 +
++      // TODO: find a better place to call this
 +      placement.node->processDimensions();
 +    }
 +
@@ -1376,48 +1846,47 @@ index 0000000..45db436
 +        minRowStart,
 +        maxColumnEnd,
 +        maxRowEnd
-+    };
++      };
 +  }
 +};
 +
 +} // namespace facebook::yoga
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/GridLayout.cpp b/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/GridLayout.cpp
 new file mode 100644
-index 0000000..adb7c56
+index 00000000000000..0867ea72d9a627
 --- /dev/null
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/GridLayout.cpp
-@@ -0,0 +1,294 @@
+@@ -0,0 +1,434 @@
 +/*
 + * Copyright (c) Meta Platforms, Inc. and affiliates.
 + *
 + * This source code is licensed under the MIT license found in the
 + * LICENSE file in the root directory of this source tree.
-+ */
++*/
 +
 +#include <yoga/algorithm/grid/GridLayout.h>
 +#include <yoga/algorithm/BoundAxis.h>
++#include <yoga/algorithm/grid/TrackSizing.h>
 +#include <yoga/algorithm/AbsoluteLayout.h>
 +#include <yoga/algorithm/TrailingPosition.h>
-+#include <yoga/algorithm/CalculateLayout.h>
-+#include <yoga/algorithm/Align.h>
++#include <cstdio>
 +
 +namespace facebook::yoga {
 +
-+void calculateGridLayoutInternal(
-+    Node* node,
-+    float availableWidth,
-+    float availableHeight,
-+    Direction ownerDirection,
-+    SizingMode widthSizingMode,
-+    SizingMode heightSizingMode,
-+    float ownerWidth,
-+    float ownerHeight,
-+    bool performLayout,
-+    LayoutPassReason reason,
-+    LayoutData& layoutMarkerData,
-+    uint32_t depth,
-+    uint32_t generationCount) {
-+  (void)reason;
++void calculateGridLayoutInternal(Node* node,
++                                float availableWidth,
++                                float availableHeight,
++                                Direction ownerDirection,
++                                SizingMode widthSizingMode,
++                                SizingMode heightSizingMode,
++                                float ownerWidth,
++                                float ownerHeight,
++                                bool performLayout,
++                                LayoutPassReason reason,
++                                LayoutData& layoutMarkerData,
++                                uint32_t depth,
++                                uint32_t generationCount) {
++  (void)reason; // Unused parameter
 +
 +  const auto& nodeStyle = node->style();
 +  const Direction direction = node->resolveDirection(ownerDirection);
@@ -1426,121 +1895,190 @@ index 0000000..adb7c56
 +  const float paddingAndBorderInline = paddingAndBorderForAxis(node, FlexDirection::Row, direction, ownerWidth);
 +  const float paddingAndBorderBlock = paddingAndBorderForAxis(node, FlexDirection::Column, direction, ownerWidth);
 +  const float availableInnerWidth = calculateAvailableInnerDimension(
-+      node, direction, Dimension::Width, availableWidth - marginInline, paddingAndBorderInline, ownerWidth, ownerWidth);
++                                                              node,
++                                                              direction,
++                                                              Dimension::Width,
++                                                              availableWidth - marginInline,
++                                                              paddingAndBorderInline,
++                                                              ownerWidth,
++                                                              ownerWidth);
 +  const float availableInnerHeight = calculateAvailableInnerDimension(
-+      node, direction, Dimension::Height, availableHeight - marginBlock, paddingAndBorderBlock, ownerHeight, ownerWidth);
++                                                                node,
++                                                                direction,
++                                                                Dimension::Height,
++                                                                availableHeight - marginBlock,
++                                                                paddingAndBorderBlock,
++                                                                ownerHeight,
++                                                                ownerWidth);
++  auto widthIsDefinite = (widthSizingMode == SizingMode::StretchFit &&
++    yoga::isDefined(availableWidth));
++  auto heightIsDefinite = (heightSizingMode == SizingMode::StretchFit &&
++     yoga::isDefined(availableHeight));
 +
-+  auto widthIsDefinite = (widthSizingMode == SizingMode::StretchFit && yoga::isDefined(availableWidth));
-+  auto heightIsDefinite = (heightSizingMode == SizingMode::StretchFit && yoga::isDefined(availableHeight));
-+
-+  // Step 1: Run the Grid Item Placement Algorithm
++  // 11. Grid Layout Algorithm
++  // Step 1: Run the Grid Item Placement Algorithm to resolve the placement of all grid items in the grid.
 +  auto autoPlacement = ResolvedAutoPlacement::resolveGridItemPlacements(node);
++  // Create the grid tracks (auto and explicit = implicit grid)
 +  auto gridTracks = createGridTracks(node, autoPlacement);
++  // At this point, we have grid items final positions and implicit grid tracks
++
++  // Step 2: Find the size of the grid container, per § 5.2 Sizing Grid Containers.
++  // If grid container size is not definite, we have to run the track sizing algorithm to find the size of the grid container.
++  // Note: During this phase, cyclic <percentage>s in track sizes are treated as auto.
++  float containerInnerWidth = widthIsDefinite ? availableInnerWidth : YGUndefined;
++  float containerInnerHeight = heightIsDefinite ? availableInnerHeight : YGUndefined;
 +  auto& rowTracks = gridTracks.rowTracks;
 +  auto& columnTracks = gridTracks.columnTracks;
 +  auto& gridItems = autoPlacement.gridItems;
++  auto& baselineItemGroups = autoPlacement.baselineItemGroups;
++  bool needsSecondTrackSizingPass = true;
 +
-+  float containerInnerWidth = widthIsDefinite ? availableInnerWidth : 0.0f;
-+  float containerInnerHeight = heightIsDefinite ? availableInnerHeight : 0.0f;
++  if (!widthIsDefinite || !heightIsDefinite) {
++    auto trackSizing = TrackSizing(
++      node,
++      columnTracks,
++      rowTracks,
++      containerInnerWidth,
++      containerInnerHeight,
++      gridItems,
++      widthSizingMode,
++      heightSizingMode,
++      direction,
++      ownerWidth,
++      ownerHeight,
++      layoutMarkerData,
++      depth,
++      generationCount,
++      baselineItemGroups);
 +
-+  // Simple track sizing: use explicit sizes or auto
-+  float totalColumnSize = 0.0f;
-+  for (auto& track : columnTracks) {
-+    if (track.minSizingFunction.isPoints()) {
-+      track.baseSize = track.minSizingFunction.value().unwrap();
-+    } else {
-+      track.baseSize = 0.0f;
-+    }
-+    totalColumnSize += track.baseSize;
-+  }
++      trackSizing.runGridSizingAlgorithm();
 +
-+  float totalRowSize = 0.0f;
-+  for (auto& track : rowTracks) {
-+    if (track.minSizingFunction.isPoints()) {
-+      track.baseSize = track.minSizingFunction.value().unwrap();
-+    } else {
-+      track.baseSize = 0.0f;
-+    }
-+    totalRowSize += track.baseSize;
-+  }
++      bool containerSizeChanged = false;
 +
-+  // Handle fr units for columns
-+  float columnGap = nodeStyle.computeGapForDimension(Dimension::Width, containerInnerWidth);
-+  float totalColumnGaps = columnTracks.size() > 1 ? columnGap * (columnTracks.size() - 1) : 0.0f;
-+  float freeSpaceColumns = containerInnerWidth - totalColumnSize - totalColumnGaps;
-+  float totalFrColumns = 0.0f;
-+  for (auto& track : columnTracks) {
-+    if (track.maxSizingFunction.isStretch()) {
-+      totalFrColumns += track.maxSizingFunction.value().unwrap();
-+    }
-+  }
-+  if (totalFrColumns > 0.0f && freeSpaceColumns > 0.0f) {
-+    float frSize = freeSpaceColumns / totalFrColumns;
-+    for (auto& track : columnTracks) {
-+      if (track.maxSizingFunction.isStretch()) {
-+        track.baseSize = frSize * track.maxSizingFunction.value().unwrap();
++      if (!widthIsDefinite) {
++        auto totalTrackWidth = trackSizing.getTotalBaseSize(Dimension::Width);
++        containerInnerWidth = boundAxis(
++          node,
++          FlexDirection::Row,
++          direction,
++          totalTrackWidth,
++          ownerWidth,
++          ownerWidth);
++        if (containerInnerWidth != totalTrackWidth) {
++          containerSizeChanged = true;
++        }
 +      }
-+    }
-+  }
 +
-+  // Handle fr units for rows
-+  float rowGap = nodeStyle.computeGapForDimension(Dimension::Height, containerInnerHeight);
-+  float totalRowGaps = rowTracks.size() > 1 ? rowGap * (rowTracks.size() - 1) : 0.0f;
-+  float freeSpaceRows = containerInnerHeight - totalRowSize - totalRowGaps;
-+  float totalFrRows = 0.0f;
-+  for (auto& track : rowTracks) {
-+    if (track.maxSizingFunction.isStretch()) {
-+      totalFrRows += track.maxSizingFunction.value().unwrap();
-+    }
-+  }
-+  if (totalFrRows > 0.0f && freeSpaceRows > 0.0f) {
-+    float frSize = freeSpaceRows / totalFrRows;
-+    for (auto& track : rowTracks) {
-+      if (track.maxSizingFunction.isStretch()) {
-+        track.baseSize = frSize * track.maxSizingFunction.value().unwrap();
++      if (!heightIsDefinite) {
++        auto totalTrackHeight = trackSizing.getTotalBaseSize(Dimension::Height);
++        containerInnerHeight = boundAxis(
++          node,
++          FlexDirection::Column,
++          direction,
++          totalTrackHeight,
++          ownerHeight,
++          ownerWidth);
++        if (containerInnerHeight != totalTrackHeight) {
++          containerSizeChanged = true;
++        }
 +      }
-+    }
-+  }
 +
-+  // Calculate final grid size
-+  float gridWidth = 0.0f;
-+  for (size_t i = 0; i < columnTracks.size(); i++) {
-+    gridWidth += columnTracks[i].baseSize;
-+    if (i < columnTracks.size() - 1) gridWidth += columnGap;
-+  }
-+
-+  float gridHeight = 0.0f;
-+  for (size_t i = 0; i < rowTracks.size(); i++) {
-+    gridHeight += rowTracks[i].baseSize;
-+    if (i < rowTracks.size() - 1) gridHeight += rowGap;
-+  }
-+
-+  // Set container dimensions
-+  if (!widthIsDefinite) {
-+    containerInnerWidth = gridWidth;
-+  }
-+  if (!heightIsDefinite) {
-+    containerInnerHeight = gridHeight;
++      // We need to run track sizing again if:
++      // 1. The container size changed due to min/max bounds or
++      // 2. There are percentage tracks in indefinite dimensions that need resolution
++      bool hasPercentageTracksNeedingResolution =
++          (!widthIsDefinite && trackSizing.hasPercentageTracks(Dimension::Width)) ||
++          (!heightIsDefinite && trackSizing.hasPercentageTracks(Dimension::Height));
++      needsSecondTrackSizingPass = containerSizeChanged || hasPercentageTracksNeedingResolution;
 +  }
 +
 +  node->setLayoutMeasuredDimension(
-+      boundAxis(node, FlexDirection::Row, direction, containerInnerWidth + paddingAndBorderInline, ownerWidth, ownerWidth),
-+      Dimension::Width);
-+  node->setLayoutMeasuredDimension(
-+      boundAxis(node, FlexDirection::Column, direction, containerInnerHeight + paddingAndBorderBlock, ownerHeight, ownerWidth),
-+      Dimension::Height);
++    boundAxis(
++        node,
++        FlexDirection::Row,
++        direction,
++        containerInnerWidth + paddingAndBorderInline,
++        ownerWidth,
++        ownerWidth),
++    Dimension::Width);
 +
++  node->setLayoutMeasuredDimension(
++    boundAxis(
++        node,
++        FlexDirection::Column,
++        direction,
++        containerInnerHeight + paddingAndBorderBlock,
++        ownerHeight,
++        ownerWidth),
++    Dimension::Height);
++
++  // If we are not performing layout, we can return early after sizing the grid container.
 +  if (!performLayout) {
 +    return;
 +  }
 +
-+  // Calculate grid line offsets
++  // Inititialize track sizing with the final container size
++  auto trackSizing = TrackSizing(
++    node,
++    columnTracks,
++    rowTracks,
++    containerInnerWidth,
++    containerInnerHeight,
++    gridItems,
++    widthSizingMode,
++    heightSizingMode,
++    direction,
++    ownerWidth,
++    ownerHeight,
++    layoutMarkerData,
++    depth,
++    generationCount,
++    baselineItemGroups);
++
++  // Step 3: Given the resulting grid container size, run the Grid Sizing Algorithm to size the grid.
++  // Run track sizing with the new container dimensions
++  // Note: During this phase, <percentage>s in track sizes are resolved against the grid container size.
++
++  // We only need to run track sizing again if:
++  // 1. Both dimensions were definite or
++  // 2. The container size changed due to min/max constraints in Step 2, or
++  // 3. There are percentage tracks in indefinite dimensions that need resolution
++  if (needsSecondTrackSizingPass) {
++    trackSizing.runGridSizingAlgorithm();
++  }
++
++  // Step 4: Lay out the grid items into their respective containing blocks. Each grid area’s width and height are considered definite for this purpose.
++  auto gridWidth = trackSizing.getTotalBaseSize(Dimension::Width);
++  auto gridHeight = trackSizing.getTotalBaseSize(Dimension::Height);
++
++  float leadingPaddingAndBorderInline = nodeStyle.computeInlineStartPadding(FlexDirection::Row, direction, ownerWidth) +
++    nodeStyle.computeInlineStartBorder(FlexDirection::Row, direction);
++  float leadingPaddingAndBorderBlock = nodeStyle.computeInlineStartPadding(FlexDirection::Column, direction, ownerWidth) +
++    nodeStyle.computeInlineStartBorder(FlexDirection::Column, direction);
++
++  // Align content/Justify content
++  float freeSpaceInlineAxis = containerInnerWidth - gridWidth;
++  auto inlineDistribution = trackSizing.calculateContentDistribution(Dimension::Width, freeSpaceInlineAxis);
++  float freeSpaceBlockAxis = containerInnerHeight - gridHeight;
++  auto blockDistribution = trackSizing.calculateContentDistribution(Dimension::Height, freeSpaceBlockAxis);
++
++  if (freeSpaceInlineAxis < 0.0f || freeSpaceBlockAxis < 0.0f) {
++    node->setLayoutHadOverflow(true);
++  }
++
++  auto gridInlineStartOffset = inlineDistribution.startOffset;
++  auto gridBlockStartOffset = blockDistribution.startOffset;
++  auto finalEffectiveColumnGap = inlineDistribution.effectiveGap;
++  auto finalEffectiveRowGap = blockDistribution.effectiveGap;
++
 +  std::vector<float> columnGridLineOffsets;
 +  columnGridLineOffsets.reserve(columnTracks.size() + 1);
 +  columnGridLineOffsets.push_back(0.0f);
 +  for (size_t i = 0; i < columnTracks.size(); i++) {
 +    float offset = columnGridLineOffsets[i] + columnTracks[i].baseSize;
-+    if (i < columnTracks.size() - 1) offset += columnGap;
++    if (i < columnTracks.size() - 1) {
++      offset += finalEffectiveColumnGap;
++    }
 +    columnGridLineOffsets.push_back(offset);
 +  }
 +
@@ -1549,43 +2087,33 @@ index 0000000..adb7c56
 +  rowGridLineOffsets.push_back(0.0f);
 +  for (size_t i = 0; i < rowTracks.size(); i++) {
 +    float offset = rowGridLineOffsets[i] + rowTracks[i].baseSize;
-+    if (i < rowTracks.size() - 1) offset += rowGap;
++    if (i < rowTracks.size() - 1) {
++      offset += finalEffectiveRowGap;
++    }
 +    rowGridLineOffsets.push_back(offset);
 +  }
 +
-+  float leadingPaddingAndBorderInline = nodeStyle.computeInlineStartPadding(FlexDirection::Row, direction, ownerWidth) +
-+                                        nodeStyle.computeInlineStartBorder(FlexDirection::Row, direction);
-+  float leadingPaddingAndBorderBlock = nodeStyle.computeInlineStartPadding(FlexDirection::Column, direction, ownerWidth) +
-+                                       nodeStyle.computeInlineStartBorder(FlexDirection::Column, direction);
-+
-+  // Layout each grid item
 +  for (auto& item : gridItems) {
-+    float containingBlockWidth = 0.0f;
-+    for (size_t i = item.columnStart; i < item.columnEnd && i < columnTracks.size(); i++) {
-+      containingBlockWidth += columnTracks[i].baseSize;
-+      if (i < item.columnEnd - 1) containingBlockWidth += columnGap;
-+    }
-+
-+    float containingBlockHeight = 0.0f;
-+    for (size_t i = item.rowStart; i < item.rowEnd && i < rowTracks.size(); i++) {
-+      containingBlockHeight += rowTracks[i].baseSize;
-+      if (i < item.rowEnd - 1) containingBlockHeight += rowGap;
-+    }
-+
++    auto [containingBlockWidth, containingBlockHeight] = trackSizing.getContainingBlockSizeForItem(item, finalEffectiveColumnGap, finalEffectiveRowGap);
 +    float gridItemInlineStart = columnGridLineOffsets[std::min(item.columnStart, columnTracks.size())];
 +    float gridItemBlockStart = rowGridLineOffsets[std::min(item.rowStart, rowTracks.size())];
 +
 +    const auto& itemStyle = item.node->style();
++
 +    const auto marginInlineStart = itemStyle.computeInlineStartMargin(FlexDirection::Row, direction, containingBlockWidth);
++    const auto marginInlineEnd = itemStyle.computeInlineEndMargin(FlexDirection::Row, direction, containingBlockWidth);
 +    const auto marginBlockStart = itemStyle.computeInlineStartMargin(FlexDirection::Column, direction, containingBlockWidth);
++    const auto marginBlockEnd = itemStyle.computeInlineEndMargin(FlexDirection::Column, direction, containingBlockWidth);
++
++    auto itemConstraints = trackSizing.calculateItemConstraints(item, containingBlockWidth, containingBlockHeight);
 +
 +    calculateLayoutInternal(
 +        item.node,
-+        containingBlockWidth,
-+        containingBlockHeight,
++        itemConstraints.width,
++        itemConstraints.height,
 +        direction,
-+        SizingMode::FitContent,
-+        SizingMode::FitContent,
++        itemConstraints.widthSizingMode,
++        itemConstraints.heightSizingMode,
 +        containingBlockWidth,
 +        containingBlockHeight,
 +        true,
@@ -1594,21 +2122,86 @@ index 0000000..adb7c56
 +        depth,
 +        generationCount);
 +
-+    float finalLeft = leadingPaddingAndBorderInline + gridItemInlineStart + marginInlineStart;
++    auto justifySelf = resolveChildJustification(node, item.node);
++    auto alignSelf = resolveChildAlignment(node, item.node);
++
++    // since we know the item width and grid width, we can do the alignment here.
++    // alignment of grid items happen in the grid area
++    // measured dimension includes padding and border
++    float actualItemWidth = item.node->getLayout().measuredDimension(Dimension::Width);
++    auto freeSpaceInlineAxisItem = containingBlockWidth - actualItemWidth - marginInlineStart - marginInlineEnd;
++    float startAutoMarginOffset = 0.0f;
++    // https://www.w3.org/TR/css-grid-1/#auto-margins
++    // auto margins in either axis absorb positive free space prior to alignment via the box alignment properties, thereby disabling the effects of any self-alignment properties in that axis.
++    if (itemStyle.inlineStartMarginIsAuto(FlexDirection::Row, direction)
++        && itemStyle.inlineEndMarginIsAuto(FlexDirection::Row, direction)) {
++      startAutoMarginOffset = freeSpaceInlineAxisItem / 2;
++      freeSpaceInlineAxisItem = 0.0f;
++    } else if (itemStyle.inlineStartMarginIsAuto(FlexDirection::Row, direction)) {
++      startAutoMarginOffset = freeSpaceInlineAxisItem;
++      freeSpaceInlineAxisItem = 0.0f;
++    } else if (itemStyle.inlineEndMarginIsAuto(FlexDirection::Row, direction)) {
++      startAutoMarginOffset = 0.0f;
++      freeSpaceInlineAxisItem = 0.0f;
++    }
++
++    float justifySelfOffset = 0.0f;
++    if (justifySelf == Justify::End) {
++      justifySelfOffset = freeSpaceInlineAxisItem;
++    } else if (justifySelf == Justify::Center) {
++      justifySelfOffset = freeSpaceInlineAxisItem / 2;
++    }
++
++    float finalLeft = leadingPaddingAndBorderInline + gridItemInlineStart + marginInlineStart + startAutoMarginOffset + justifySelfOffset + gridInlineStartOffset;
++
 +    if (direction == Direction::RTL) {
 +      finalLeft = getPositionOfOppositeEdge(finalLeft, FlexDirection::Row, node, item.node);
 +    }
 +
++    // Add relative position offset for relatively positioned items.
++    // For RTL, the relative position is in logical coordinates so we subtract it from the physical left.
 +    float relativePositionInline = item.node->relativePosition(FlexDirection::Row, direction, containingBlockWidth);
-+    item.node->setLayoutPosition(finalLeft + relativePositionInline, PhysicalEdge::Left);
++    if (direction == Direction::RTL) {
++      item.node->setLayoutPosition(finalLeft - relativePositionInline, PhysicalEdge::Left);
++    } else {
++      item.node->setLayoutPosition(finalLeft + relativePositionInline, PhysicalEdge::Left);
++    }
 +
-+    float finalTop = leadingPaddingAndBorderBlock + gridItemBlockStart + marginBlockStart;
++    float actualItemHeight = item.node->getLayout().measuredDimension(Dimension::Height);
++    auto freeSpaceBlockAxisItem = containingBlockHeight - actualItemHeight - marginBlockStart - marginBlockEnd;
++    float topAutoMarginOffset = 0.0f;
++    if (itemStyle.inlineStartMarginIsAuto(FlexDirection::Column, direction)
++          && itemStyle.inlineEndMarginIsAuto(FlexDirection::Column, direction)) {
++      topAutoMarginOffset = freeSpaceBlockAxisItem / 2;
++      freeSpaceBlockAxisItem = 0.0f;
++    } else if (itemStyle.inlineStartMarginIsAuto(FlexDirection::Column, direction)) {
++      topAutoMarginOffset = freeSpaceBlockAxisItem;
++      freeSpaceBlockAxisItem = 0.0f;
++    } else if (itemStyle.inlineEndMarginIsAuto(FlexDirection::Column, direction)) {
++      freeSpaceBlockAxisItem = 0.0f;
++    }
++
++    float alignSelfOffset = 0.0f;
++    if (alignSelf == Align::End) {
++      alignSelfOffset = freeSpaceBlockAxisItem;
++    } else if (alignSelf == Align::Center) {
++      alignSelfOffset = freeSpaceBlockAxisItem / 2;
++    } else if (alignSelf == Align::Baseline) {
++      alignSelfOffset = item.baselineShim;
++    }
++
++    float finalTop = gridItemBlockStart + marginBlockStart + topAutoMarginOffset + alignSelfOffset + gridBlockStartOffset + leadingPaddingAndBorderBlock;
++
++    // Add relative position offset for relatively positioned items
 +    float relativePositionBlock = item.node->relativePosition(FlexDirection::Column, direction, containingBlockHeight);
 +    item.node->setLayoutPosition(finalTop + relativePositionBlock, PhysicalEdge::Top);
 +  }
 +
-+  // Handle absolute children
-+  if (nodeStyle.positionType() != PositionType::Static || node->alwaysFormsContainingBlock() || depth == 1) {
++  // Perform layout of absolute children
++  // https://www.w3.org/TR/css-grid-1/#abspos
++  // TODO: support grid-[row|column]-[start|end] as containing blocks
++  if (nodeStyle.positionType() != PositionType::Static ||
++      node->alwaysFormsContainingBlock() || depth == 1) {
 +    for (auto child : node->getLayoutChildren()) {
 +      if (child->style().display() == Display::None) {
 +        zeroOutLayoutRecursively(child);
@@ -1616,14 +2209,24 @@ index 0000000..adb7c56
 +        child->setDirty(false);
 +        continue;
 +      }
++
 +      if (child->style().positionType() == PositionType::Absolute) {
 +        child->processDimensions();
 +      }
 +    }
 +
 +    layoutAbsoluteDescendants(
-+        node, node, widthSizingMode, direction, layoutMarkerData, depth, generationCount,
-+        0.0f, 0.0f, availableInnerWidth, availableInnerHeight);
++        node,
++        node,
++        widthSizingMode,
++        direction,
++        layoutMarkerData,
++        depth,
++        generationCount,
++        0.0f,
++        0.0f,
++        availableInnerWidth,
++        availableInnerHeight);
 +  }
 +}
 +
@@ -1636,6 +2239,7 @@ index 0000000..adb7c56
 +  columnTracks.reserve(autoPlacement.maxColumnEnd - autoPlacement.minColumnStart);
 +  rowTracks.reserve(autoPlacement.maxRowEnd - autoPlacement.minRowStart);
 +
++  // https://www.w3.org/TR/css-grid-1/#auto-tracks
 +  auto autoRowTracks = node->style().gridAutoRows().empty() ?
 +      GridTrackList{GridTrackSize{StyleSizeLength::ofAuto(), StyleSizeLength::ofAuto()}} :
 +      node->style().gridAutoRows();
@@ -1643,6 +2247,8 @@ index 0000000..adb7c56
 +      GridTrackList{GridTrackSize{StyleSizeLength::ofAuto(), StyleSizeLength::ofAuto()}} :
 +      node->style().gridAutoColumns();
 +
++  // The last implicit grid track before the explicit grid receives the last specified size, and so on backwards.
++  // i.e. The pattern repeats backwards
 +  auto negativeImplicitGridColumnTrackCount = -autoPlacement.minColumnStart;
 +  auto autoColumnTracksSize = autoColumnTracks.size();
 +  for (auto i = 0; i < negativeImplicitGridColumnTrackCount; i++) {
@@ -1655,6 +2261,8 @@ index 0000000..adb7c56
 +    columnTracks.push_back(gridExplicitColumns[i]);
 +  }
 +
++  // The first track after the last explicitly-sized track receives the first specified size
++  // i.e. the pattern repeats forwards
 +  for (size_t i = 0; i < static_cast<size_t>(autoPlacement.maxColumnEnd) - gridExplicitColumns.size(); i++) {
 +    auto autoColumnTrack = autoColumnTracks[i % autoColumnTracksSize];
 +    columnTracks.push_back(autoColumnTrack);
@@ -1667,26 +2275,27 @@ index 0000000..adb7c56
 +    auto autoRowTrack = autoRowTracks[autoRowTracksSize - currentRowTrackIndex - 1];
 +    rowTracks.push_back(autoRowTrack);
 +  }
-+
 +  for (size_t i = 0; i < gridExplicitRows.size(); i++) {
 +    rowTracks.push_back(gridExplicitRows[i]);
 +  }
-+
 +  for (size_t i = 0; i < static_cast<size_t>(autoPlacement.maxRowEnd) - gridExplicitRows.size(); i++) {
 +    auto autoRowTrack = autoRowTracks[i % autoRowTracksSize];
 +    rowTracks.push_back(autoRowTrack);
 +  }
 +
-+  return {std::move(columnTracks), std::move(rowTracks)};
++  return {
++    std::move(columnTracks),
++    std::move(rowTracks)
++  };
 +}
 +
 +} // namespace facebook::yoga
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/GridLayout.h b/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/GridLayout.h
 new file mode 100644
-index 0000000..d532d6a
+index 00000000000000..9e65dc6f83803f
 --- /dev/null
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/GridLayout.h
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,43 @@
 +/*
 + * Copyright (c) Meta Platforms, Inc. and affiliates.
 + *
@@ -1724,15 +2333,1808 @@ index 0000000..d532d6a
 +    std::vector<GridTrackSize> columnTracks;
 +    std::vector<GridTrackSize> rowTracks;
 +};
-+
 +// Creates implicit grid tracks based on the auto placement result
 +GridTracks createGridTracks(
 +    yoga::Node* node,
 +    const ResolvedAutoPlacement& autoPlacement);
 +
 +} // namespace facebook::yoga
+diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/TrackSizing.h b/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/TrackSizing.h
+new file mode 100644
+index 00000000000000..0a1cf018b5e0e7
+--- /dev/null
++++ b/node_modules/react-native/ReactCommon/yoga/yoga/algorithm/grid/TrackSizing.h
+@@ -0,0 +1,1788 @@
++/*
++ * Copyright (c) Meta Platforms, Inc. and affiliates.
++ *
++ * This source code is licensed under the MIT license found in the
++ * LICENSE file in the root directory of this source tree.
++*/
++
++#pragma once
++
++#include <yoga/algorithm/Align.h>
++#include <yoga/algorithm/Baseline.h>
++#include <yoga/algorithm/BoundAxis.h>
++#include <yoga/algorithm/CalculateLayout.h>
++#include <yoga/algorithm/grid/GridLayout.h>
++#include <yoga/numeric/Comparison.h>
++#include <yoga/style/StyleSizeLength.h>
++#include <unordered_set>
++#include <unordered_map>
++#include <map>
++
++namespace facebook::yoga {
++
++struct TrackSizing {
++  enum class AffectedSize {
++    BaseSize,
++    GrowthLimit
++  };
++
++  struct ContentDistribution {
++    float startOffset = 0.0f;
++    float betweenTracksOffset = 0.0f;
++    float effectiveGap = 0.0f;
++  };
++
++  struct ItemConstraint {
++    float width;
++    float height;
++    SizingMode widthSizingMode;
++    SizingMode heightSizingMode;
++    float containingBlockWidth;
++    float containingBlockHeight;
++  };
++
++  using CrossDimensionEstimator = std::function<float(const GridItem&)>;
++
++  struct ItemSizeContribution {
++    const GridItem* item;
++    std::vector<GridTrackSize*> affectedTracks;
++    float sizeContribution;
++
++    ItemSizeContribution(
++      const GridItem* item,
++      const std::vector<GridTrackSize*>& affectedTracks,
++      float sizeContribution) :
++      item(item),
++      affectedTracks(affectedTracks),
++      sizeContribution(sizeContribution) {}
++  };
++
++  Node* node;
++  std::vector<GridTrackSize>& columnTracks;
++  std::vector<GridTrackSize>& rowTracks;
++  float containerInnerWidth;
++  float containerInnerHeight;
++  std::vector<GridItem>& gridItems;
++  SizingMode widthSizingMode;
++  SizingMode heightSizingMode;
++  Direction direction;
++  float ownerWidth;
++  float ownerHeight;
++  LayoutData& layoutMarkerData;
++  uint32_t depth;
++  uint32_t generationCount;
++  CrossDimensionEstimator crossDimensionEstimator;
++
++  // below flags are used for optimization purposes
++  bool hasPercentageColumnTracks = false;
++  bool hasPercentageRowTracks = false;
++  bool hasOnlyFixedTracks = false;
++  bool hasIntrinsicTracks = false;
++  bool hasFlexibleTracks = false;
++
++  // Pre-computed baseline sharing groups
++  BaselineItemGroups& baselineItemGroups;
++
++  TrackSizing(
++    yoga::Node* node,
++    std::vector<GridTrackSize>& columnTracks,
++    std::vector<GridTrackSize>& rowTracks,
++    float containerInnerWidth,
++    float containerInnerHeight,
++    std::vector<GridItem>& gridItems,
++    SizingMode widthSizingMode,
++    SizingMode heightSizingMode,
++    Direction direction,
++    float ownerWidth,
++    float ownerHeight,
++    LayoutData& layoutMarkerData,
++    uint32_t depth,
++    uint32_t generationCount,
++    BaselineItemGroups& baselineItemGroups) :
++    node(node),
++    columnTracks(columnTracks),
++    rowTracks(rowTracks),
++    containerInnerWidth(containerInnerWidth),
++    containerInnerHeight(containerInnerHeight),
++    gridItems(gridItems),
++    widthSizingMode(widthSizingMode),
++    heightSizingMode(heightSizingMode),
++    direction(direction),
++    ownerWidth(ownerWidth),
++    ownerHeight(ownerHeight),
++    layoutMarkerData(layoutMarkerData),
++    depth(depth),
++    generationCount(generationCount),
++    baselineItemGroups(baselineItemGroups) {}
++
++  // 11.1. Grid Sizing Algorithm
++  // https://www.w3.org/TR/css-grid-1/#algo-grid-sizing
++  void runGridSizingAlgorithm() {
++    computeItemTrackCrossingFlags();
++
++    // 1. First, the track sizing algorithm is used to resolve the sizes of the grid columns.
++    auto rowHeightFromFixedTracks = makeRowHeightEstimatorUsingFixedTracks(calculateEffectiveRowGapForEstimation());
++    runTrackSizing(Dimension::Width, rowHeightFromFixedTracks);
++
++    // 2. Next, the track sizing algorithm resolves the sizes of the grid rows.
++    auto columnWidthFromBaseSizes = makeCrossDimensionEstimatorUsingBaseSize(Dimension::Width, calculateEffectiveGapFromBaseSizes(Dimension::Width));
++    runTrackSizing(Dimension::Height, columnWidthFromBaseSizes);
++
++    // 3. Then, if the min-content contribution of any grid item has changed
++    // Only intrinsic tracks can affect the cross track size in above steps, so this step is only needed if there are intrinsic tracks
++    if (hasIntrinsicTracks) {
++      auto rowHeightFromBaseSizes = makeCrossDimensionEstimatorUsingBaseSize(Dimension::Height, calculateEffectiveGapFromBaseSizes(Dimension::Height));
++      if (contributionsChanged(Dimension::Width, rowHeightFromFixedTracks, rowHeightFromBaseSizes)) {
++        runTrackSizing(Dimension::Width, rowHeightFromBaseSizes);
++        // 4. Next, if the min-content contribution of any grid item has changed
++        auto newColumnWidthFromBaseSizes = makeCrossDimensionEstimatorUsingBaseSize(Dimension::Width, calculateEffectiveGapFromBaseSizes(Dimension::Width));
++        if (contributionsChanged(Dimension::Height, columnWidthFromBaseSizes, newColumnWidthFromBaseSizes)) {
++          runTrackSizing(Dimension::Height, newColumnWidthFromBaseSizes);
++        }
++      }
++    }
++  }
++
++  // 11.3. Track Sizing Algorithm
++  // https://www.w3.org/TR/css-grid-1/#algo-track-sizing
++  void runTrackSizing(Dimension dimension, CrossDimensionEstimator estimator = nullptr) {
++    // Store the estimator for use in calculateItemConstraints
++    crossDimensionEstimator = estimator;
++
++    // Step 1: Initialize Track Sizes
++    initializeTrackSizes(dimension);
++    // Step 2: Resolve Intrinsic Track Sizes
++    resolveIntrinsicTrackSizes(dimension);
++    // Step 3: Maximize Track Sizes
++    maximizeTrackSizes(dimension);
++    // Step 4: Expand Flexible Tracks
++    expandFlexibleTracks(dimension);
++    // Step 5: Stretch Auto Tracks
++    stretchAutoTracks(dimension);
++  }
++
++  // 11.4 Initialize Track Sizes
++  // https://www.w3.org/TR/css-grid-1/#algo-init
++  // Also sets some flags (hasPercentageTracks, hasOnlyFixedTracks) for optimization purposes
++  void initializeTrackSizes(Dimension dimension) {
++    auto& tracks = dimension == Dimension::Width ? columnTracks : rowTracks;
++    auto containerSize = dimension == Dimension::Width ? containerInnerWidth : containerInnerHeight;
++    bool& hasPercentageTracks = dimension == Dimension::Width ? hasPercentageColumnTracks : hasPercentageRowTracks;
++    hasOnlyFixedTracks = true;
++    hasIntrinsicTracks = false;
++    hasFlexibleTracks = false;
++
++    for (size_t i = 0; i < tracks.size(); i++) {
++      auto& track = tracks[i];
++
++      // detect percentage tracks for optimization purposes
++      if (isPercentageSizingFunction(track.minSizingFunction) ||
++          isPercentageSizingFunction(track.maxSizingFunction)) {
++        hasPercentageTracks = true;
++      }
++
++      if (isFixedSizingFunction(track.minSizingFunction, containerSize)) {
++        auto resolved = track.minSizingFunction.resolve(containerSize);
++        track.baseSize = resolved.unwrap();
++      }
++      else if (isIntrinsicSizingFunction(track.minSizingFunction, containerSize)) {
++        track.baseSize = 0;
++        hasOnlyFixedTracks = false;
++        hasIntrinsicTracks = true;
++      }
++      else {
++        // THIS SHOULD NEVER HAPPEN
++        track.baseSize = 0;
++      }
++
++      if (isFixedSizingFunction(track.maxSizingFunction, containerSize)) {
++        auto resolved = track.maxSizingFunction.resolve(containerSize);
++        track.growthLimit = resolved.unwrap();
++      }
++      else if (isIntrinsicSizingFunction(track.maxSizingFunction, containerSize)) {
++        track.growthLimit = INFINITY;
++        hasOnlyFixedTracks = false;
++        hasIntrinsicTracks = true;
++      }
++      else if (isFlexibleSizingFunction(track.maxSizingFunction)) {
++        track.growthLimit = INFINITY;
++        hasOnlyFixedTracks = false;
++        hasFlexibleTracks = true;
++      }
++      else {
++        // THIS SHOULD NEVER HAPPEN
++        track.growthLimit = INFINITY;
++      }
++
++      // In all cases, if the growth limit is less than the base size, increase the growth limit to match the base size.
++      if (track.growthLimit < track.baseSize) {
++        track.growthLimit = track.baseSize;
++      }
++
++      // minmax(20px, 40px) type of tracks are not fixed tracks
++      if (track.baseSize < track.growthLimit) {
++        hasOnlyFixedTracks = false;
++      }
++    }
++  }
++
++  // 11.5 Resolve Intrinsic Track Sizes
++  // https://www.w3.org/TR/css-grid-1/#algo-content
++  void resolveIntrinsicTrackSizes(Dimension dimension) {
++    auto& tracks = dimension == Dimension::Width ? columnTracks : rowTracks;
++
++    // Step 1: Shim baseline-aligned items (only for height dimension i.e. align-items/align-self)
++    if (dimension == Dimension::Height) {
++      shimBaselineAlignedItems();
++    }
++
++    // Fast path - if tracks are fixed-sized, skip below steps
++    if (hasOnlyFixedTracks) {
++      return;
++    }
++
++    // Step 2. and Step 3 Increase sizes to accommodate spanning items
++    accomodateSpanningItemsCrossingContentSizedTracks(dimension);
++    // Step 4. Increase sizes to accommodate spanning items crossing flexible tracks
++    accomodateSpanningItemsCrossingFlexibleTracks(dimension);
++    // Step 5. If any track still has an infinite growth limit (because, for example, it had no items placed in it or it is a flexible track), set its growth limit to its base size.
++    for (auto& track: tracks) {
++      if (track.growthLimit == INFINITY) {
++        track.growthLimit = track.baseSize;
++      }
++    }
++  }
++
++  // https://www.w3.org/TR/css-grid-1/#algo-baseline-shims
++  void shimBaselineAlignedItems() {
++    for (const auto& [rowIndex, items] : baselineItemGroups) {
++      float maxBaselineWithMargin = 0.0f;
++      std::vector<std::pair<GridItem*, float>> itemBaselines;
++      itemBaselines.reserve(items.size());
++
++      for (auto* itemPtr : items) {
++        const auto& item = *itemPtr;
++
++        if (itemSizeDependsOnIntrinsicTracks(item)) {
++          continue;
++        }
++
++        float containingBlockWidth = crossDimensionEstimator ? crossDimensionEstimator(item) : YGUndefined;
++        float containingBlockHeight = YGUndefined;
++
++        auto itemConstraints = calculateItemConstraints(item, containingBlockWidth, containingBlockHeight);
++
++        calculateLayoutInternal(
++            item.node,
++            itemConstraints.width,
++            itemConstraints.height,
++            node->getLayout().direction(),
++            SizingMode::MaxContent,
++            itemConstraints.heightSizingMode,
++            itemConstraints.containingBlockWidth,
++            itemConstraints.containingBlockHeight,
++            true,
++            LayoutPassReason::kGridLayout,
++            layoutMarkerData,
++            depth + 1,
++            generationCount);
++
++        const float baseline = calculateBaseline(item.node);
++        const float marginTop = item.node->style().computeInlineStartMargin(
++            FlexDirection::Column, direction, itemConstraints.containingBlockWidth);
++        const float baselineWithMargin = baseline + marginTop;
++
++        itemBaselines.emplace_back(itemPtr, baselineWithMargin);
++        maxBaselineWithMargin = std::max(maxBaselineWithMargin, baselineWithMargin);
++      }
++
++      for (auto& [itemPtr, baselineWithMargin] : itemBaselines) {
++        itemPtr->baselineShim = maxBaselineWithMargin - baselineWithMargin;
++      }
++    }
++  }
++
++  // https://www.w3.org/TR/css-grid-1/#algo-single-span-items
++  // https://www.w3.org/TR/css-grid-1/#algo-spanning-items
++  void accomodateSpanningItemsCrossingContentSizedTracks(Dimension dimension) {
++    if (!hasIntrinsicTracks) {
++      return;
++    }
++    auto& tracks = dimension == Dimension::Width ? columnTracks : rowTracks;
++    auto containerSize = dimension == Dimension::Width ? containerInnerWidth : containerInnerHeight;
++    auto sizingMode = dimension == Dimension::Width ? widthSizingMode : heightSizingMode;
++
++    auto startIndexKey = dimension == Dimension::Width ? &GridItem::columnStart : &GridItem::rowStart;
++    auto endIndexKey = dimension == Dimension::Width ? &GridItem::columnEnd : &GridItem::rowEnd;
++
++    // 2. Size tracks to fit non-spanning items (span = 1 items)
++    // https://www.w3.org/TR/css-grid-1/#algo-single-span-items
++    std::vector<size_t> spanningItemIndices;
++    spanningItemIndices.reserve(gridItems.size());
++    for (size_t index = 0; index < gridItems.size(); index++) {
++      const auto& item = gridItems[index];
++      if (item.crossesFlexibleTrack(dimension)) {
++        continue;
++      }
++      auto startIndex = item.*startIndexKey;
++      auto endIndex = item.*endIndexKey;
++      size_t span = endIndex - startIndex;
++      if (span == 1) {
++        auto& track = tracks[startIndex];
++        auto itemConstraints = calculateItemConstraints(item, dimension);
++        // For auto minimums:
++        if (isAutoSizingFunction(track.minSizingFunction, containerSize)) {
++          float contribution = sizingMode == SizingMode::MaxContent
++              ? limitedMinContentContribution(item, dimension, itemConstraints)
++              : minimumContribution(item, dimension, itemConstraints);
++          track.baseSize = std::max(track.baseSize, contribution);
++        }
++
++        // For max-content maximums:
++        if (isAutoSizingFunction(track.maxSizingFunction, containerSize)) {
++          float contribution = maxContentContribution(item, dimension, itemConstraints);
++          if (track.growthLimit == INFINITY) {
++            track.growthLimit = contribution;
++          } else {
++            track.growthLimit = std::max(track.growthLimit, contribution);
++          }
++        }
++        // In all cases, if a track's growth limit is now less than its base size, increase the growth limit to match the base size.
++        if (track.growthLimit < track.baseSize) {
++          track.growthLimit = track.baseSize;
++        }
++      } else {
++        spanningItemIndices.push_back(index);
++      }
++    }
++
++    // 3. Increase sizes to accommodate spanning items crossing content-sized tracks:
++    // https://www.w3.org/TR/css-grid-1/#algo-spanning-items
++    if (spanningItemIndices.empty()) {
++      return;
++    }
++
++    std::sort(spanningItemIndices.begin(), spanningItemIndices.end(), [&](size_t i, size_t j) {
++        const auto& a = gridItems[i];
++        const auto& b = gridItems[j];
++        return (a.*endIndexKey - a.*startIndexKey) < (b.*endIndexKey - b.*startIndexKey);
++    });
++
++    size_t previousSpan = 1;
++    std::vector<ItemSizeContribution> itemsForIntrinsicMin;
++    std::vector<ItemSizeContribution> itemsForIntrinsicMax;
++    std::vector<ItemSizeContribution> itemsForMaxContentMax;
++
++    auto distributeSpaceToTracksForItemsWithTheSameSpan = [&]() {
++      // Step 1: For intrinsic minimums
++      if (!itemsForIntrinsicMin.empty()) {
++        distributeExtraSpaceAcrossSpannedTracks(dimension, itemsForIntrinsicMin, AffectedSize::BaseSize);
++        itemsForIntrinsicMin.clear();
++      }
++
++      // Step 2 and Step 3 are skipped since we're not supporting min-content and max-content yet
++
++      // Step 4: If at this point any track's growth limit is now less than its base size, increase its growth limit to match its base size
++      for (auto& track : tracks) {
++        if (track.growthLimit < track.baseSize) {
++          track.growthLimit = track.baseSize;
++        }
++
++        // https://www.w3.org/TR/css-grid-1/#infinitely-growable
++        // reset infinitely growable flag for each track
++        // This flag gets set in Step 5 and used in Step 6, so we need to reset it before running Step 5.
++        track.infinitelyGrowable = false;
++      }
++
++      // Step 5: For intrinsic maximums
++      if (!itemsForIntrinsicMax.empty()) {
++        distributeExtraSpaceAcrossSpannedTracks(dimension, itemsForIntrinsicMax, AffectedSize::GrowthLimit);
++        itemsForIntrinsicMax.clear();
++      }
++
++      // Step 6: For max-content maximums
++      if (!itemsForMaxContentMax.empty()) {
++        distributeExtraSpaceAcrossSpannedTracks(dimension, itemsForMaxContentMax, AffectedSize::GrowthLimit);
++        itemsForMaxContentMax.clear();
++      }
++    };
++
++    for (auto& index: spanningItemIndices) {
++      const auto& item = gridItems[index];
++
++      if (item.crossesFlexibleTrack(dimension)) {
++        continue;
++      }
++
++      auto startIndex = item.*startIndexKey;
++      auto endIndex = item.*endIndexKey;
++      size_t span = endIndex - startIndex;
++
++      if (span > previousSpan) {
++        distributeSpaceToTracksForItemsWithTheSameSpan();
++        previousSpan = span;
++      }
++
++      std::vector<GridTrackSize*> intrinsicMinimumSizingFunctionTracks;
++      std::vector<GridTrackSize*> intrinsicMaximumSizingFunctionTracks;
++      std::vector<GridTrackSize*> maxContentMaximumSizingFunctionTracks;
++
++      for (size_t i = startIndex; i < endIndex; i++) {
++        if (isIntrinsicSizingFunction(tracks[i].minSizingFunction, containerSize)) {
++          intrinsicMinimumSizingFunctionTracks.push_back(&tracks[i]);
++        }
++
++        if (isIntrinsicSizingFunction(tracks[i].maxSizingFunction, containerSize)) {
++          intrinsicMaximumSizingFunctionTracks.push_back(&tracks[i]);
++        }
++
++        // auto as max sizing function is treated as max-content sizing function
++        if (isAutoSizingFunction(tracks[i].maxSizingFunction, containerSize)) {
++          maxContentMaximumSizingFunctionTracks.push_back(&tracks[i]);
++        }
++      }
++
++      auto itemConstraints = calculateItemConstraints(item, dimension);
++      if (!intrinsicMinimumSizingFunctionTracks.empty()) {
++        auto minContribution = sizingMode == SizingMode::MaxContent
++            ? limitedMinContentContribution(item, dimension, itemConstraints)
++            : minimumContribution(item, dimension, itemConstraints);
++        itemsForIntrinsicMin.emplace_back(&item, std::move(intrinsicMinimumSizingFunctionTracks), minContribution);
++      }
++
++      if (!intrinsicMaximumSizingFunctionTracks.empty()) {
++        auto minContentContrib = minContentContribution(item, dimension, itemConstraints);
++        itemsForIntrinsicMax.emplace_back(&item, std::move(intrinsicMaximumSizingFunctionTracks), minContentContrib);
++      }
++
++      if (!maxContentMaximumSizingFunctionTracks.empty()) {
++        auto maxContentContrib = maxContentContribution(item, dimension, itemConstraints);
++        itemsForMaxContentMax.emplace_back(&item, std::move(maxContentMaximumSizingFunctionTracks), maxContentContrib);
++      }
++    }
++
++    // Process last span
++    distributeSpaceToTracksForItemsWithTheSameSpan();
++  };
++
++  // https://www.w3.org/TR/css-grid-1/#algo-spanning-flex-items
++  void accomodateSpanningItemsCrossingFlexibleTracks(Dimension dimension) {
++    if (!hasFlexibleTracks) {
++      return;
++    }
++    auto& tracks = dimension == Dimension::Width ? columnTracks : rowTracks;
++    auto sizingMode = dimension == Dimension::Width ? widthSizingMode : heightSizingMode;
++    auto containerSize = dimension == Dimension::Width ? containerInnerWidth : containerInnerHeight;
++    auto startIndexkey = dimension == Dimension::Width ? &GridItem::columnStart : &GridItem::rowStart;
++    auto endIndexKey = dimension == Dimension::Width ? &GridItem::columnEnd : &GridItem::rowEnd;
++
++    std::vector<ItemSizeContribution> itemsSpanningFlexible;
++
++    for (const auto& item : gridItems) {
++      if (!item.crossesFlexibleTrack(dimension)) {
++        continue;
++      }
++
++      auto start = item.*startIndexkey;
++      auto end = item.*endIndexKey;
++      std::vector<GridTrackSize*> intrinsicMinFlexibleTracks;
++
++      for (size_t i = start; i < end && i < tracks.size(); i++) {
++        auto& track = tracks[i];
++        if (isIntrinsicSizingFunction(track.minSizingFunction, containerSize)) {
++          intrinsicMinFlexibleTracks.push_back(&track);
++        }
++      }
++
++      if (!intrinsicMinFlexibleTracks.empty()) {
++        auto itemConstraints = calculateItemConstraints(item, dimension);
++        auto minContribution = sizingMode == SizingMode::MaxContent
++            ? limitedMinContentContribution(item, dimension, itemConstraints)
++            : minimumContribution(item, dimension, itemConstraints);
++
++        itemsSpanningFlexible.emplace_back(
++            &item,
++            std::move(intrinsicMinFlexibleTracks),
++            minContribution
++        );
++      }
++    }
++
++    if (!itemsSpanningFlexible.empty()) {
++      distributeSpaceToFlexibleTracksForItems(dimension, itemsSpanningFlexible);
++    }
++  };
++
++  // https://www.w3.org/TR/css-grid-1/#extra-space
++  void distributeExtraSpaceAcrossSpannedTracks(
++    Dimension dimension,
++    std::vector<ItemSizeContribution>& gridItemSizeContributions,
++    AffectedSize affectedSizeType) {
++    auto& tracks = dimension == Dimension::Width ? columnTracks : rowTracks;
++    auto startIndexKey = dimension == Dimension::Width ? &GridItem::columnStart : &GridItem::rowStart;
++    auto endIndexKey = dimension == Dimension::Width ? &GridItem::columnEnd : &GridItem::rowEnd;
++    auto containerSize = dimension == Dimension::Width ? containerInnerWidth : containerInnerHeight;
++    auto gap = node->style().computeGapForDimension(dimension, containerSize);
++    std::unordered_map<GridTrackSize*, float> plannedIncrease;
++    plannedIncrease.reserve(gridItemSizeContributions.size());
++
++    // 1. Maintain separately for each affected track a planned increase, initially set to 0. (This prevents the size increases from becoming order-dependent.)
++    for (const auto& itemSizeContribution : gridItemSizeContributions) {
++      for (auto& track : itemSizeContribution.affectedTracks) {
++        plannedIncrease[track] = 0.0f;
++      }
++    }
++
++    // 2. For each accommodated item, considering only tracks the item spans:
++    for (const auto& itemSizeContribution : gridItemSizeContributions) {
++      std::unordered_map<GridTrackSize*, float> itemIncurredIncrease;
++      itemIncurredIncrease.reserve(itemSizeContribution.affectedTracks.size());
++      for (auto& track: itemSizeContribution.affectedTracks) {
++        itemIncurredIncrease[track] = 0.0f;
++      }
++
++      // 2.1 Find the space to distribute
++      auto start = itemSizeContribution.item->*startIndexKey;
++      auto end = itemSizeContribution.item->*endIndexKey;
++      float totalSpannedTracksSize = 0.0f;
++      for (size_t i = start; i < end && i < tracks.size(); i++) {
++        auto& track = tracks[i];
++        if (affectedSizeType == AffectedSize::BaseSize) {
++          totalSpannedTracksSize += track.baseSize;
++        } else {
++          // For infinite growth limits, substitute the track's base size
++          totalSpannedTracksSize += track.growthLimit == INFINITY ? track.baseSize : track.growthLimit;
++        }
++        if (i < end - 1) {
++          // gaps are treated as tracks of fixed size. Item can span over gaps.
++          totalSpannedTracksSize += gap;
++        }
++      }
++
++      float spaceToDistribute = std::max(0.0f, itemSizeContribution.sizeContribution - totalSpannedTracksSize);
++      std::unordered_set<GridTrackSize*> frozenTracks;
++      frozenTracks.reserve(itemSizeContribution.affectedTracks.size());
++
++      // 2.2. Distribute space up to limits
++      while (frozenTracks.size() < itemSizeContribution.affectedTracks.size() && spaceToDistribute > 0.0f && !yoga::inexactEquals(spaceToDistribute, 0.0f)) {
++        auto unfrozenTrackCount = itemSizeContribution.affectedTracks.size() - frozenTracks.size();
++        auto distributionPerTrack = spaceToDistribute / unfrozenTrackCount;
++
++        for (auto& track: itemSizeContribution.affectedTracks) {
++          if (frozenTracks.contains(track)) {
++            continue;
++          }
++
++          float limit;
++          float affectedSize;
++
++          if (affectedSizeType == AffectedSize::BaseSize) {
++            affectedSize = track->baseSize;
++            limit = track->growthLimit;
++          } else {
++            affectedSize = track->growthLimit;
++            limit = INFINITY;
++            if (track->growthLimit != INFINITY && !track->infinitelyGrowable) {
++              limit = track->growthLimit;
++            }
++
++            // If the affected size was a growth limit and the track is not marked infinitely growable, then each item-incurred increase will be zero.
++            if (!track->infinitelyGrowable) {
++              frozenTracks.insert(track);
++              continue;
++            }
++          }
++
++          if (affectedSize + distributionPerTrack + itemIncurredIncrease[track] > limit) {
++            frozenTracks.insert(track);
++            auto increase = limit - affectedSize - itemIncurredIncrease[track];
++            itemIncurredIncrease[track] += increase;
++            spaceToDistribute -= increase;
++          } else {
++            itemIncurredIncrease[track] += distributionPerTrack;
++            spaceToDistribute -= distributionPerTrack;
++          }
++        }
++      }
++
++      // 2.3. Distribute space to non-affected tracks:
++      // Currently, browsers do not implement this step.
++      // https://github.com/w3c/csswg-drafts/issues/3648
++
++      // 2.4. Distribute space beyond limits
++      if (spaceToDistribute > 0.0f && !yoga::inexactEquals(spaceToDistribute, 0.0f)) {
++        std::vector<GridTrackSize*> tracksToGrowBeyondLimits;
++        for (auto& track: itemSizeContribution.affectedTracks) {
++          if (isIntrinsicSizingFunction(track->maxSizingFunction, containerSize)) {
++            tracksToGrowBeyondLimits.push_back(track);
++          }
++        }
++
++        // if there are no such tracks, then all affected tracks.
++        if (affectedSizeType == AffectedSize::BaseSize && tracksToGrowBeyondLimits.empty()) {
++          tracksToGrowBeyondLimits = itemSizeContribution.affectedTracks;
++        }
++
++        while (spaceToDistribute > 0.0f && !yoga::inexactEquals(spaceToDistribute, 0.0f) && !tracksToGrowBeyondLimits.empty()) {
++          auto unfrozenTrackCount = tracksToGrowBeyondLimits.size();
++          auto distributionPerTrack = spaceToDistribute / unfrozenTrackCount;
++          for (auto& track: tracksToGrowBeyondLimits) {
++            itemIncurredIncrease[track] += distributionPerTrack;
++            spaceToDistribute -= distributionPerTrack;
++          }
++        }
++      }
++
++      // 2.5. For each affected track, if the track's item-incurred increase is larger than the track's planned increase set the track's planned increase to that value.
++      for (auto& track: itemSizeContribution.affectedTracks) {
++        if (itemIncurredIncrease[track] > plannedIncrease[track]) {
++          plannedIncrease[track] = itemIncurredIncrease[track];
++        }
++      }
++    }
++
++    // 3. Update the tracks affected sizes
++    for (const auto& [track, increase] : plannedIncrease) {
++      if (affectedSizeType == AffectedSize::BaseSize) {
++        track->baseSize += increase;
++      } else {
++        if (track->growthLimit == INFINITY) {
++          track->growthLimit = track->baseSize + increase;
++          track->infinitelyGrowable = true;
++        } else {
++          track->growthLimit += increase;
++        }
++      }
++    }
++  }
++
++  // https://www.w3.org/TR/css-grid-1/#extra-space
++  // Similar to distribute extra space for content sized trcks, but distributes space considering flex factors.
++  void distributeSpaceToFlexibleTracksForItems(
++    Dimension dimension,
++    const std::vector<ItemSizeContribution>& gridItemSizeContributions) {
++    auto& tracks = dimension == Dimension::Width ? columnTracks : rowTracks;
++    auto containerSize = dimension == Dimension::Width ? containerInnerWidth : containerInnerHeight;
++    auto gap = node->style().computeGapForDimension(dimension, containerSize);
++    auto startIndexKey = dimension == Dimension::Width ? &GridItem::columnStart : &GridItem::rowStart;
++    auto endIndexKey = dimension == Dimension::Width ? &GridItem::columnEnd : &GridItem::rowEnd;
++
++    // Step 1: Maintain planned increase for each affected track
++    std::unordered_map<GridTrackSize*, float> plannedIncrease;
++    for (const auto& itemSizeContribution : gridItemSizeContributions) {
++      for (auto& track : itemSizeContribution.affectedTracks) {
++        plannedIncrease[track] = 0.0f;
++      }
++    }
++
++    // Step 2: For each item
++    for (const auto& itemSizeContribution : gridItemSizeContributions) {
++      std::unordered_map<GridTrackSize*, float> itemIncurredIncrease;
++      for (auto& track : itemSizeContribution.affectedTracks) {
++        itemIncurredIncrease[track] = 0.0f;
++      }
++
++      // 2.1 Find space to distribute
++      auto start = itemSizeContribution.item->*startIndexKey;
++      auto end = itemSizeContribution.item->*endIndexKey;
++      float totalSpannedTracksSize = 0.0f;
++      for (size_t i = start; i < end && i < tracks.size(); i++) {
++        totalSpannedTracksSize += tracks[i].baseSize;
++        if (i < end - 1) {
++          // gaps are treated as tracks of fixed size. Item can span over gaps.
++          totalSpannedTracksSize += gap;
++        }
++      }
++
++      float spaceToDistribute = std::max(0.0f, itemSizeContribution.sizeContribution - totalSpannedTracksSize);
++
++      float sumOfFlexFactors = 0.0f;
++      for (auto& track : itemSizeContribution.affectedTracks) {
++        sumOfFlexFactors += track->maxSizingFunction.value().unwrap();
++      }
++
++      if (sumOfFlexFactors > 0.0f) {
++        // Distribute space by flex ratios (normalized)
++        for (auto& track : itemSizeContribution.affectedTracks) {
++          auto flexFactor = track->maxSizingFunction.value().unwrap();
++          auto increase = spaceToDistribute * flexFactor / sumOfFlexFactors;
++          itemIncurredIncrease[track] += increase;
++        }
++      } else {
++        // All flex factors are zero, distribute equally
++        auto equalShare = spaceToDistribute / static_cast<float>(itemSizeContribution.affectedTracks.size());
++        for (auto& track : itemSizeContribution.affectedTracks) {
++          itemIncurredIncrease[track] += equalShare;
++        }
++      }
++
++      for (auto& track : itemSizeContribution.affectedTracks) {
++        if (itemIncurredIncrease[track] > plannedIncrease[track]) {
++          plannedIncrease[track] = itemIncurredIncrease[track];
++        }
++      }
++    }
++
++    // Step 3: Update the tracks' affected sizes by adding in the planned increase
++    for (const auto& [track, increase] : plannedIncrease) {
++      track->baseSize += increase;
++    }
++  };
++
++  // 11.6. Maximize Tracks
++  // https://www.w3.org/TR/css-grid-1/#algo-grow-tracks
++  void maximizeTrackSizes(Dimension dimension) {
++    // Fast path - if tracks are fixed-sized, skip below steps
++    if (hasOnlyFixedTracks) {
++      return;
++    }
++
++    auto& tracks = dimension == Dimension::Width ? columnTracks : rowTracks;
++    auto containerSize = dimension == Dimension::Width ? containerInnerWidth : containerInnerHeight;
++
++    // Save original base sizes before maximization
++    std::vector<float> originalBaseSizes;
++    originalBaseSizes.reserve(tracks.size());
++    for (auto& track : tracks) {
++      originalBaseSizes.push_back(track.baseSize);
++    }
++
++    // First attempt with the original container inner size
++    distributeFreeSpaceToTracks(dimension, containerSize);
++
++    // Check if this would cause the grid to be larger than the grid container's inner size as limited by its max-width/height
++    auto totalGridSize = getTotalBaseSize(dimension);
++
++    // Get the max constraint for this dimension
++    const float paddingAndBorder = dimension == Dimension::Width
++        ? paddingAndBorderForAxis(node, FlexDirection::Row, direction, ownerWidth)
++        : paddingAndBorderForAxis(node, FlexDirection::Column, direction, ownerWidth);
++
++    auto maxContainerBorderBoxSize = node->style().resolvedMaxDimension(
++        direction,
++        dimension,
++        dimension == Dimension::Width ? ownerWidth : ownerHeight,
++        ownerWidth);
++
++    auto maxContainerInnerSize = maxContainerBorderBoxSize.isDefined()
++        ? maxContainerBorderBoxSize.unwrap() - paddingAndBorder
++        : YGUndefined;
++
++    if (yoga::isDefined(maxContainerInnerSize)) {
++      if (totalGridSize > maxContainerInnerSize) {
++        // Redo this step, treating the available grid space as equal to the grid container's inner size when it's sized to its max-width/height
++        // Reset base sizes to their values before this maximize step
++        for (size_t i = 0; i < tracks.size(); i++) {
++          tracks[i].baseSize = originalBaseSizes[i];
++        }
++
++        distributeFreeSpaceToTracks(dimension, maxContainerInnerSize);
++      }
++    }
++  }
++
++  // Distribute space in maximizeTrackSizes step
++  // https://www.w3.org/TR/css-grid-1/#algo-grow-tracks
++  void distributeFreeSpaceToTracks(Dimension dimension, float targetAvailableSize) {
++    auto& tracks = dimension == Dimension::Width ? columnTracks : rowTracks;
++    auto sizingMode = dimension == Dimension::Width ? widthSizingMode : heightSizingMode;
++    float freeSpace = 0.0f;
++    if (yoga::isDefined(targetAvailableSize)) {
++      auto totalBaseSize = getTotalBaseSize(dimension);
++      freeSpace = std::max(0.0f, targetAvailableSize - totalBaseSize);
++    }
++
++    // For the purpose of this step: if sizing the grid container under a max-content constraint, the free space is infinite;
++    // if sizing under a min-content constraint, the free space is zero.
++    if (sizingMode == SizingMode::MaxContent) {
++      freeSpace = INFINITY;
++    }
++
++    // If the free space is positive, distribute it equally to the base sizes of all tracks,
++    // freezing tracks as they reach their growth limits (and continuing to grow the unfrozen tracks as needed).
++    if (freeSpace > 0.0f && !yoga::inexactEquals(freeSpace, 0.0f)) {
++      // growth limit will not be Infinite in maximizeTrackSizes step since we had set Infinite growth limit to base size in resolveIntrinsicTrackSizes's last step - https://www.w3.org/TR/css-grid-1/#algo-finite-growth
++      if (freeSpace == INFINITY) {
++        for (auto& track : tracks) {
++          track.baseSize = track.growthLimit;
++        }
++      } else {
++        std::unordered_set<GridTrackSize*> frozenTracks;
++        frozenTracks.reserve(tracks.size());
++        auto extraSpace = freeSpace;
++
++        while (frozenTracks.size() < tracks.size() && extraSpace > 0.0f && !yoga::inexactEquals(extraSpace, 0.0f)) {
++          auto unfrozenTrackCount = tracks.size() - frozenTracks.size();
++          auto distributionPerTrack = extraSpace / unfrozenTrackCount;
++
++          for (auto& track : tracks) {
++            GridTrackSize* trackPtr = &track;
++            if (frozenTracks.contains(trackPtr)) {
++              continue;
++            }
++
++            // Check if adding this distribution would exceed the growth limit
++            if (track.baseSize + distributionPerTrack > track.growthLimit) {
++              auto increase = std::max(0.0f, track.growthLimit - track.baseSize);
++              track.baseSize += increase;
++              extraSpace -= increase;
++              frozenTracks.insert(trackPtr);
++            } else {
++              track.baseSize += distributionPerTrack;
++              extraSpace -= distributionPerTrack;
++            }
++          }
++        }
++      }
++    }
++  }
++
++  // 11.7. Expand Flexible Tracks
++  // https://www.w3.org/TR/css-grid-1/#algo-flex-tracks
++  void expandFlexibleTracks(Dimension dimension) {
++    if (!hasFlexibleTracks) {
++      return;
++    }
++
++    auto& gridTracks = dimension == Dimension::Width ? columnTracks : rowTracks;
++    auto containerSize = dimension == Dimension::Width ? containerInnerWidth : containerInnerHeight;
++    auto gap = node->style().computeGapForDimension(dimension, containerSize);
++
++    float freeSpace = calculateFreeSpace(dimension);
++
++    float flexFraction = 0.0f;
++    // If the free space is zero or if sizing the grid container under a min-content constraint:
++    if (yoga::inexactEquals(freeSpace, 0.0f)) {
++      flexFraction = 0.0f;
++    }
++    // Otherwise, if the free space is a definite length:
++    // The used flex fraction is the result of finding the size of an fr using all of the grid tracks and a space to fill of the available grid space.
++    else if (yoga::isDefined(freeSpace)) {
++      flexFraction = findFrSize(dimension, 0, gridTracks.size(), containerSize, std::unordered_set<GridTrackSize*>());
++    }
++    // Otherwise, if the free space is an indefinite length:
++    // The used flex fraction is the maximum of:
++    // For each flexible track, if the flexible track's flex factor is greater than one, the result of dividing the track's base size by its flex factor; otherwise, the track's base size.
++    // For each grid item that crosses a flexible track, the result of finding the size of an fr using all the grid tracks that the item crosses and a space to fill of the item’s max-content contribution.
++    else {
++      for (auto& track : gridTracks) {
++        if (isFlexibleSizingFunction(track.maxSizingFunction) && track.maxSizingFunction.value().isDefined()) {
++          float flexFactor = track.maxSizingFunction.value().unwrap();
++          if (flexFactor > 1.0f) {
++            flexFraction = std::max(flexFraction, track.baseSize / flexFactor);
++          } else {
++            flexFraction = std::max(flexFraction, track.baseSize);
++          }
++        }
++      }
++
++      auto startIndexKey = dimension == Dimension::Width ? &GridItem::columnStart : &GridItem::rowStart;
++      auto endIndexKey = dimension == Dimension::Width ? &GridItem::columnEnd : &GridItem::rowEnd;
++
++      for (auto& item : gridItems) {
++          if (!item.crossesFlexibleTrack(dimension)) {
++            continue;
++          }
++          auto itemConstraints = calculateItemConstraints(item, dimension);
++          auto itemMaxContentContribution = maxContentContribution(item, dimension, itemConstraints);
++          flexFraction = std::max(flexFraction, findFrSize(dimension, item.*startIndexKey, item.*endIndexKey, itemMaxContentContribution, std::unordered_set<GridTrackSize*>()));
++        }
++      }
++
++      // If using this flex fraction would cause the grid to be smaller than the grid container's min-width/height
++      // (or larger than the grid container's max-width/height), then redo this step, treating the free space as definite
++      // and the available grid space as equal to the grid container's inner size when it's sized to its min-width/height (max-width/height).
++
++      // Calculate what the grid size would be with this flex fraction
++      float newTotalSize = 0.0f;
++      for (size_t i = 0; i < gridTracks.size(); i++) {
++      auto& track = gridTracks[i];
++      if (isFlexibleSizingFunction(track.maxSizingFunction) && track.maxSizingFunction.value().isDefined()) {
++        float flexFactor = track.maxSizingFunction.value().unwrap();
++        newTotalSize += std::max(track.baseSize, flexFraction * flexFactor);
++      } else {
++        newTotalSize += track.baseSize;
++      }
++      if (i < gridTracks.size() - 1) {
++        newTotalSize += gap;
++      }
++    }
++
++    // Check min constraint for this dimension
++    const float paddingAndBorder = dimension == Dimension::Width
++      ? paddingAndBorderForAxis(node, FlexDirection::Row, direction, ownerWidth)
++      : paddingAndBorderForAxis(node, FlexDirection::Column, direction, ownerWidth);
++    auto minContainerOuter = node->style().resolvedMinDimension(
++        direction,
++        dimension,
++        dimension == Dimension::Width ? ownerWidth : ownerHeight,
++        ownerWidth);
++    auto minContainerSize = minContainerOuter.isDefined()
++        ? minContainerOuter.unwrap() - paddingAndBorder
++        : YGUndefined;
++
++    if (yoga::isDefined(minContainerSize)) {
++      if (newTotalSize < minContainerSize) {
++        // Redo with min constraint
++        flexFraction = findFrSize(dimension, 0, gridTracks.size(), minContainerSize, std::unordered_set<GridTrackSize*>());
++      }
++    }
++
++    // Get the max constraint for this dimension
++    auto maxContainerOuter = node->style().resolvedMaxDimension(
++        direction,
++        dimension,
++        dimension == Dimension::Width ? ownerWidth : ownerHeight,
++        ownerWidth);
++
++    auto maxContainerSize = maxContainerOuter.isDefined()
++        ? maxContainerOuter.unwrap() - paddingAndBorder
++        : YGUndefined;
++
++    if (yoga::isDefined(maxContainerSize)) {
++      if (newTotalSize > maxContainerSize) {
++        // Redo with max constraint
++        flexFraction = findFrSize(dimension, 0, gridTracks.size(), maxContainerSize, std::unordered_set<GridTrackSize*>());
++      }
++    }
++
++    // For each flexible track, if the product of the used flex fraction and the track's flex factor is greater than the track's base size,
++    // set its base size to that product.
++    for (auto& track : gridTracks) {
++      if (isFlexibleSizingFunction(track.maxSizingFunction) && track.maxSizingFunction.value().isDefined()) {
++        float flexFactor = track.maxSizingFunction.value().unwrap();
++        float newSize = flexFraction * flexFactor;
++        if (newSize > track.baseSize) {
++          track.baseSize = newSize;
++        }
++      }
++    }
++  };
++
++  // 11.7.1. Find the Size of an fr
++  // https://www.w3.org/TR/css-grid-1/#algo-find-fr-size
++  float findFrSize(Dimension dimension, size_t startIndex, size_t endIndex, float spaceToFill, const std::unordered_set<GridTrackSize*>& nonFlexibleTracks) {
++    auto containerSize = dimension == Dimension::Width ? containerInnerWidth : containerInnerHeight;
++    auto gap = node->style().computeGapForDimension(dimension, containerSize);
++    auto leftoverSpace = spaceToFill;
++    auto flexFactorSum = 0.0f;
++    std::vector<GridTrackSize*> flexibleTracks;
++    auto& tracks = dimension == Dimension::Width ? columnTracks : rowTracks;
++
++    for (size_t i = startIndex; i < endIndex; i++) {
++      auto& track = tracks[i];
++      // Let leftover space be the space to fill minus the base sizes of the non-flexible grid tracks.
++      if (i < endIndex - 1) {
++        // gap is treated as a non-flexible track
++        leftoverSpace -= gap;
++      }
++
++      if (!isFlexibleSizingFunction(track.maxSizingFunction) || nonFlexibleTracks.contains(&track)) {
++        leftoverSpace -= track.baseSize;
++      }
++      // Let flex factor sum be the sum of the flex factors of the flexible tracks.
++      else if (track.maxSizingFunction.isStretch() && track.maxSizingFunction.value().isDefined()) {
++        flexFactorSum += track.maxSizingFunction.value().unwrap();
++        flexibleTracks.push_back(&track);
++      }
++    }
++
++    // If this value is less than 1, set it to 1 instead.
++    if (flexFactorSum < 1.0f) {
++      flexFactorSum = 1.0f;
++    }
++
++    // Let the hypothetical fr size be the leftover space divided by the flex factor sum.
++    auto hypotheticalFrSize = leftoverSpace / flexFactorSum;
++    // If the product of the hypothetical fr size and a flexible track's flex factor is less than the track's base size, restart this algorithm treating all such tracks as inflexible.
++    std::unordered_set<GridTrackSize*> inflexibleTracks;
++    for (auto& track : flexibleTracks) {
++      if (track->maxSizingFunction.isStretch() && track->maxSizingFunction.value().isDefined()) {
++        float flexFactor = track->maxSizingFunction.value().unwrap();
++        if (hypotheticalFrSize * flexFactor < track->baseSize) {
++          inflexibleTracks.insert(track);
++        }
++      }
++    }
++
++    // restart this algorithm treating all such tracks as inflexible.
++    if (!inflexibleTracks.empty()) {
++      inflexibleTracks.insert(nonFlexibleTracks.begin(), nonFlexibleTracks.end());
++      return findFrSize(dimension, startIndex, endIndex, spaceToFill, inflexibleTracks);
++    }
++
++    return hypotheticalFrSize;
++  }
++
++  // 11.8. Stretch auto Tracks
++  // https://www.w3.org/TR/css-grid-1/#algo-stretch
++  void stretchAutoTracks(Dimension dimension) {
++    // Fast path - if tracks are fixed-sized, skip below steps
++    if (hasOnlyFixedTracks) {
++      return;
++    }
++
++    auto& gridTracks = dimension == Dimension::Width ? columnTracks : rowTracks;
++    auto containerSize = dimension == Dimension::Width ? containerInnerWidth : containerInnerHeight;
++
++    // When the content-distribution property of the grid container is normal or stretch in this axis, this step expands tracks that have an auto max track sizing function by dividing any remaining positive, definite free space equally amongst them. If the free space is indefinite, but the grid container has a definite min-width/height, use that size to calculate the free space for this step instead.
++    auto shouldStretch = false;
++    if (dimension == Dimension::Width) {
++      shouldStretch = node->style().justifyContent() == Justify::Stretch;
++    } else {
++      shouldStretch = node->style().alignContent() == Align::Stretch;
++    }
++
++    if (shouldStretch) {
++      // Count only auto tracks for distribution
++      std::vector<GridTrackSize*> autoTracks;
++      for (auto& track : gridTracks) {
++        if (isAutoSizingFunction(track.maxSizingFunction, containerSize)) {
++          autoTracks.push_back(&track);
++        }
++      }
++
++      if (autoTracks.empty()) {
++        return;
++      }
++
++      float freeSpace = calculateFreeSpace(dimension);
++
++      // If the free space is indefinite, but the grid container has a definite min-width/height, use that size to calculate the free space for this step instead.
++      if (!yoga::isDefined(freeSpace)) {
++        const float paddingAndBorder = dimension == Dimension::Width
++          ? paddingAndBorderForAxis(node, FlexDirection::Row, direction, ownerWidth)
++          : paddingAndBorderForAxis(node, FlexDirection::Column, direction, ownerWidth);
++
++        auto minContainerBorderBoxSize = node->style().resolvedMinDimension(
++            direction,
++            dimension,
++            dimension == Dimension::Width ? ownerWidth : ownerHeight,
++            ownerWidth);
++        auto minContainerInnerSize = minContainerBorderBoxSize.isDefined()
++            ? minContainerBorderBoxSize.unwrap() - paddingAndBorder
++            : YGUndefined;
++
++        if (yoga::isDefined(minContainerInnerSize)) {
++          auto totalBaseSize = getTotalBaseSize(dimension);
++          freeSpace = std::max(0.0f, minContainerInnerSize - totalBaseSize);
++        }
++      }
++
++      if (yoga::isDefined(freeSpace) && freeSpace > 0.0f && !yoga::inexactEquals(freeSpace, 0.0f)) {
++        // Divide free space equally among auto tracks only
++        auto freeSpacePerAutoTrack = freeSpace / autoTracks.size();
++        for (auto& track : autoTracks) {
++          track->baseSize += freeSpacePerAutoTrack;
++        }
++      }
++    }
++  };
++
++  // https://www.w3.org/TR/css-grid-1/#free-space
++  float calculateFreeSpace(Dimension dimension) {
++    float freeSpace = YGUndefined;
++    auto containerSize = dimension == Dimension::Width ? containerInnerWidth : containerInnerHeight;
++    if (yoga::isDefined(containerSize)) {
++      auto totalBaseSize = getTotalBaseSize(dimension);
++      freeSpace = std::max(0.0f, containerSize - totalBaseSize);
++    }
++
++    return freeSpace;
++  }
++
++  float measureItem(const GridItem& item, Dimension dimension, const ItemConstraint& constraints) {
++    calculateLayoutInternal(
++        item.node,
++        constraints.width,
++        constraints.height,
++        node->getLayout().direction(),
++        constraints.widthSizingMode,
++        constraints.heightSizingMode,
++        constraints.containingBlockWidth,
++        constraints.containingBlockHeight,
++        false,
++        LayoutPassReason::kMeasureChild,
++        layoutMarkerData,
++        depth + 1,
++        generationCount);
++
++    return item.node->getLayout().measuredDimension(dimension);
++  }
++
++  // There are 4 size contribution types used for intrinsic track sizing
++  // 1. minContentContribution - item's min-content size + margins
++  // 2. maxContentContribution - item's max-content size + margins
++  // 3. minimumContribution - smallest outer size
++  // 4. limitedMinContentContribution - min-content clamped by fixed track limits
++
++  // TODO: Yoga does not support min-content constraint yet so we use the max-content size contributions here
++  float minContentContribution(const GridItem& item, Dimension dimension, const ItemConstraint& itemConstraints) {
++    auto marginForAxis = item.node->style().computeMarginForAxis(
++      dimension == Dimension::Width ? FlexDirection::Row : FlexDirection::Column,
++      itemConstraints.containingBlockWidth);
++
++    float contribution = measureItem(item, dimension, itemConstraints) + marginForAxis;
++
++    if (dimension == Dimension::Height) {
++      contribution += item.baselineShim;
++    }
++    return contribution;
++  }
++
++  float maxContentContribution(const GridItem& item, Dimension dimension, const ItemConstraint& itemConstraints) {
++    auto marginForAxis = item.node->style().computeMarginForAxis(
++      dimension == Dimension::Width ? FlexDirection::Row : FlexDirection::Column,
++      itemConstraints.containingBlockWidth);
++
++    float contribution = measureItem(item, dimension, itemConstraints) + marginForAxis;
++
++    if (dimension == Dimension::Height) {
++      contribution += item.baselineShim;
++    }
++    return contribution;
++  }
++
++  // Minimum contribution: the smallest outer size the item can have
++  // https://www.w3.org/TR/css-grid-1/#minimum-contribution
++  float minimumContribution(const GridItem& item, Dimension dimension, const ItemConstraint& itemConstraints) {
++    auto& tracks = dimension == Dimension::Width ? columnTracks : rowTracks;
++    float containerSize = dimension == Dimension::Width ? containerInnerWidth : containerInnerHeight;
++    auto containingBlockSize = dimension == Dimension::Width
++        ? itemConstraints.containingBlockWidth
++        : itemConstraints.containingBlockHeight;
++
++    auto marginForAxis = item.node->style().computeMarginForAxis(
++      dimension == Dimension::Width ? FlexDirection::Row : FlexDirection::Column,
++      itemConstraints.containingBlockWidth);
++
++    auto preferredSize = item.node->style().dimension(dimension);
++    auto minSize = item.node->style().minDimension(dimension);
++
++    float contribution = 0.0f;
++
++    // If preferred size is definite (not auto/percent), use min-content contribution
++    if (!preferredSize.isAuto() && !preferredSize.isPercent()) {
++      return minContentContribution(item, dimension, itemConstraints);
++    }
++
++    // If explicit min-size is set, use it
++    if (minSize.isDefined() && !minSize.isAuto()) {
++      auto resolvedMinSize = minSize.resolve(containingBlockSize);
++      contribution = resolvedMinSize.unwrap() + marginForAxis;
++    }
++    // Otherwise compute automatic minimum size
++    else {
++      contribution = automaticMinimumSize(item, dimension, itemConstraints, tracks, containerSize) + marginForAxis;
++    }
++
++    if (dimension == Dimension::Height) {
++      contribution += item.baselineShim;
++    }
++    return contribution;
++  }
++
++  // https://www.w3.org/TR/css-grid-1/#min-size-auto
++  float automaticMinimumSize(
++      const GridItem& item,
++      Dimension dimension,
++      const ItemConstraint& itemConstraints,
++      const std::vector<GridTrackSize>& tracks,
++      float containerSize) {
++
++    auto overflow = item.node->style().overflow();
++    size_t startIndex = dimension == Dimension::Width ? item.columnStart : item.rowStart;
++    size_t endIndex = dimension == Dimension::Width ? item.columnEnd : item.rowEnd;
++
++    // Check its computed overflow is not a scrollable overflow value
++    bool isScrollContainer = overflow == Overflow::Scroll || overflow == Overflow::Hidden;
++    if (isScrollContainer) {
++      return 0.0f;
++    }
++
++    // Check if it spans at least one track in that axis whose min track sizing function is auto
++    bool spansAutoMinTrack = false;
++    for (size_t i = startIndex; i < endIndex; i++) {
++      // TODO: check if this should also consider percentage auto behaving tracks
++      if (tracks[i].minSizingFunction.isAuto()) {
++        spansAutoMinTrack = true;
++        break;
++      }
++    }
++    if (!spansAutoMinTrack) {
++      return 0.0f;
++    }
++
++    // Check if it spans more than one track in that axis, none of those tracks are flexible
++    bool spansMultipleTracks = (endIndex - startIndex) > 1;
++    if (spansMultipleTracks && item.crossesFlexibleTrack(dimension)) {
++      return 0.0f;
++    }
++
++    return contentBasedMinimum(item, dimension, itemConstraints, tracks, containerSize);
++  }
++
++  // https://www.w3.org/TR/css-grid-1/#content-based-minimum-size
++  float contentBasedMinimum(
++      const GridItem& item,
++      Dimension dimension,
++      const ItemConstraint& itemConstraints,
++      const std::vector<GridTrackSize>& tracks,
++      float containerSize) {
++
++    float result = measureItem(item, dimension, itemConstraints);
++    // Clamp by fixed track limit if all spanned tracks have fixed max sizing function
++    auto fixedLimit = computeFixedTracksLimit(item, dimension, tracks, containerSize);
++    if (yoga::isDefined(fixedLimit)) {
++      result = std::min(result, fixedLimit);
++    }
++
++    // Clamp by max-size if definite
++    auto containingBlockSize = dimension == Dimension::Width
++        ? itemConstraints.containingBlockWidth
++        : itemConstraints.containingBlockHeight;
++    auto maxSize = item.node->style().maxDimension(dimension);
++    if (maxSize.isDefined()) {
++      auto resolvedMaxSize = maxSize.resolve(containingBlockSize);
++      if (resolvedMaxSize.isDefined()) {
++        result = std::min(result, resolvedMaxSize.unwrap());
++      }
++    }
++
++    return result;
++  }
++
++  // https://www.w3.org/TR/css-grid-1/#limited-contribution
++  float limitedMinContentContribution(const GridItem& item, Dimension dimension, const ItemConstraint& itemConstraints) {
++    auto& tracks = dimension == Dimension::Width ? columnTracks : rowTracks;
++    float containerSize = dimension == Dimension::Width ? containerInnerWidth : containerInnerHeight;
++
++    auto fixedLimit = computeFixedTracksLimit(item, dimension, tracks, containerSize);
++    auto minContent = minContentContribution(item, dimension, itemConstraints);
++    auto minimum = minimumContribution(item, dimension, itemConstraints);
++
++    if (yoga::isDefined(fixedLimit)) {
++      return std::max(std::min(minContent, fixedLimit), minimum);
++    }
++
++    return std::max(minContent, minimum);
++  }
++
++  float computeFixedTracksLimit(
++      const GridItem& item,
++      Dimension dimension,
++      const std::vector<GridTrackSize>& tracks,
++      float containerSize) {
++
++    size_t startIndex = dimension == Dimension::Width ? item.columnStart : item.rowStart;
++    size_t endIndex = dimension == Dimension::Width ? item.columnEnd : item.rowEnd;
++    auto gap = node->style().computeGapForDimension(dimension, containerSize);
++
++    float limit = 0.0f;
++    for (size_t i = startIndex; i < endIndex; i++) {
++      if (!isFixedSizingFunction(tracks[i].maxSizingFunction, containerSize)) {
++        return YGUndefined;
++      }
++      auto resolved = tracks[i].maxSizingFunction.resolve(containerSize);
++      if (resolved.isDefined()) {
++        limit += resolved.unwrap();
++      }
++      if (i < endIndex - 1) {
++        limit += gap;
++      }
++    }
++    return limit;
++  }
++
++  static bool isFixedSizingFunction(const StyleSizeLength& sizingFunction, float referenceLength) {
++    return sizingFunction.isDefined() && sizingFunction.resolve(referenceLength).isDefined();
++  }
++
++  static bool isIntrinsicSizingFunction(const StyleSizeLength& sizingFunction, float referenceLength) {
++    return isAutoSizingFunction(sizingFunction, referenceLength);
++  }
++
++  static bool isAutoSizingFunction(const StyleSizeLength& sizingFunction, float referenceLength) {
++    return sizingFunction.isAuto() || (sizingFunction.isPercent() && !yoga::isDefined(referenceLength));
++  }
++
++  static bool isFlexibleSizingFunction(const StyleSizeLength& sizingFunction) {
++    return sizingFunction.isStretch();
++  }
++
++  static bool isPercentageSizingFunction(const StyleSizeLength& sizingFunction) {
++    return sizingFunction.isPercent();
++  }
++
++  float getTotalBaseSize(Dimension dimension) {
++    auto containerSize = dimension == Dimension::Width ? containerInnerWidth : containerInnerHeight;
++    const auto& tracks = dimension == Dimension::Width ? columnTracks : rowTracks;
++    auto gap = node->style().computeGapForDimension(dimension, containerSize);
++
++    float totalBaseSize = 0.0f;
++    for (size_t i = 0; i < tracks.size(); i++) {
++      totalBaseSize += tracks[i].baseSize;
++      if (i < tracks.size() - 1) {
++        totalBaseSize += gap;
++      }
++    }
++    return totalBaseSize;
++  }
++
++  bool hasPercentageTracks(Dimension dimension) const {
++    return dimension == Dimension::Width ? hasPercentageColumnTracks : hasPercentageRowTracks;
++  }
++
++  std::pair<float, float> getContainingBlockSizeForItem(const GridItem& item, float effectiveColumnGap, float effectiveRowGap) {
++    float containingBlockWidth = 0.0f;
++    float containingBlockHeight = 0.0f;
++
++    for (size_t i = item.columnStart; i < item.columnEnd && i < columnTracks.size(); i++) {
++      containingBlockWidth += columnTracks[i].baseSize;
++      if (i < item.columnEnd - 1) {
++        containingBlockWidth += effectiveColumnGap;
++      }
++    }
++
++    for (size_t i = item.rowStart; i < item.rowEnd && i < rowTracks.size(); i++) {
++      containingBlockHeight += rowTracks[i].baseSize;
++      if (i < item.rowEnd - 1) {
++        containingBlockHeight += effectiveRowGap;
++      }
++    }
++
++    return std::make_pair(containingBlockWidth, containingBlockHeight);
++  }
++
++  ContentDistribution calculateContentDistribution(
++    Dimension dimension,
++    float freeSpace) {
++    auto numTracks = dimension == Dimension::Width ? columnTracks.size() : rowTracks.size();
++    auto containerSize = dimension == Dimension::Width ? containerInnerWidth : containerInnerHeight;
++    auto baseGap = node->style().computeGapForDimension(dimension, containerSize);
++
++    ContentDistribution result;
++    result.effectiveGap = baseGap;
++
++    if (yoga::inexactEquals(freeSpace, 0.0f)) {
++      return result;
++    }
++
++    if (dimension == Dimension::Width) {
++      const Justify justifyContent = freeSpace > 0.0f ?
++        node->style().justifyContent() :
++        fallbackAlignment(node->style().justifyContent());
++
++      switch (justifyContent) {
++        case Justify::Center:
++          result.startOffset = freeSpace / 2.0f;
++          break;
++
++        case Justify::End:
++          result.startOffset = freeSpace;
++          break;
++
++        case Justify::SpaceBetween:
++          if (numTracks > 1) {
++            result.betweenTracksOffset = freeSpace / (numTracks - 1);
++          }
++          break;
++
++        case Justify::SpaceAround:
++          if (numTracks > 0) {
++            result.betweenTracksOffset = freeSpace / numTracks;
++            result.startOffset = result.betweenTracksOffset / 2.0f;
++          }
++          break;
++
++        case Justify::SpaceEvenly:
++          result.betweenTracksOffset = freeSpace / (numTracks + 1);
++          result.startOffset = result.betweenTracksOffset;
++          break;
++
++        case Justify::Start:
++        case Justify::FlexStart:
++        case Justify::FlexEnd:
++        case Justify::Stretch:
++        case Justify::Auto:
++        default:
++          break;
++      }
++    } else {
++      const auto alignContent = freeSpace > 0.0f
++        ? node->style().alignContent()
++        : fallbackAlignment(node->style().alignContent());
++      switch (alignContent) {
++        case Align::Center:
++          // content center works with negative free space too
++          // refer grid_align_content_center_negative_space_gap fixture
++          result.startOffset = freeSpace / 2.0f;
++          break;
++        case Align::End:
++          result.startOffset = freeSpace;
++          break;
++        case Align::SpaceBetween:
++          if (numTracks > 1) {
++            // negative free space is not distributed with space between, checkout grid_align_content_space_between_negative_space_gap fixture
++            result.betweenTracksOffset = std::max(0.0f, freeSpace / (numTracks - 1));
++          }
++          break;
++
++        case Align::SpaceAround:
++          if (numTracks > 0) {
++            result.betweenTracksOffset = freeSpace / numTracks;
++            result.startOffset = result.betweenTracksOffset / 2.0f;
++          }
++          break;
++
++        case Align::SpaceEvenly:
++          result.betweenTracksOffset = freeSpace / (numTracks + 1);
++          result.startOffset = result.betweenTracksOffset;
++          break;
++
++        case Align::Auto:
++        case Align::FlexStart:
++        case Align::FlexEnd:
++        case Align::Stretch:
++        case Align::Baseline:
++        case Align::Start:
++        default:
++          break;
++      }
++    }
++
++    result.effectiveGap = baseGap + result.betweenTracksOffset;
++    return result;
++  }
++
++  ItemConstraint calculateItemConstraints(const GridItem& item, Dimension dimension) {
++    float containingBlockWidth = YGUndefined;
++    float containingBlockHeight = YGUndefined;
++    if (dimension == Dimension::Width) {
++      containingBlockHeight = crossDimensionEstimator(item);
++    } else {
++      containingBlockWidth = crossDimensionEstimator(item);
++    }
++
++    return calculateItemConstraints(item, containingBlockWidth, containingBlockHeight);
++  }
++
++  ItemConstraint calculateItemConstraints(
++    const GridItem& item,
++    float containingBlockWidth,
++    float containingBlockHeight) {
++    auto availableWidth = YGUndefined;
++    auto availableHeight = YGUndefined;
++    auto itemWidthSizingMode = SizingMode::MaxContent;
++    auto itemHeightSizingMode = SizingMode::MaxContent;
++    auto hasDefiniteWidth = item.node->hasDefiniteLength(Dimension::Width, containingBlockWidth);
++    auto hasDefiniteHeight = item.node->hasDefiniteLength(Dimension::Height, containingBlockHeight);
++
++    if (yoga::isDefined(containingBlockWidth)) {
++      itemWidthSizingMode = SizingMode::FitContent;
++      availableWidth = containingBlockWidth;
++    }
++
++    if (yoga::isDefined(containingBlockHeight)) {
++      itemHeightSizingMode = SizingMode::FitContent;
++      availableHeight = containingBlockHeight;
++    }
++
++    const auto marginInline = item.node->style().computeMarginForAxis(FlexDirection::Row, containingBlockWidth);
++    if (hasDefiniteWidth) {
++      itemWidthSizingMode = SizingMode::StretchFit;
++      auto resolvedWidth = item.node->getResolvedDimension(
++        direction,
++        Dimension::Width,
++        containingBlockWidth,
++        containingBlockWidth).unwrap();
++      resolvedWidth = boundAxis(
++        item.node,
++        FlexDirection::Row,
++        direction,
++        resolvedWidth,
++        containingBlockWidth,
++        containingBlockWidth);
++      availableWidth = resolvedWidth + marginInline;
++    }
++
++    const auto marginBlock = item.node->style().computeMarginForAxis(FlexDirection::Column, containingBlockWidth);
++    if (hasDefiniteHeight) {
++      itemHeightSizingMode = SizingMode::StretchFit;
++      auto resolvedHeight = item.node->getResolvedDimension(
++        direction,
++        Dimension::Height,
++        containingBlockHeight,
++        containingBlockWidth).unwrap();
++      resolvedHeight = boundAxis(
++        item.node,
++        FlexDirection::Column,
++        direction,
++        resolvedHeight,
++        containingBlockHeight,
++        containingBlockWidth);
++      availableHeight = resolvedHeight + marginBlock;
++    }
++
++    auto justifySelf = resolveChildJustification(node, item.node);
++    auto alignSelf = resolveChildAlignment(node, item.node);
++
++    bool hasMarginInlineAuto = item.node->style().inlineStartMarginIsAuto(FlexDirection::Row, direction)
++      || item.node->style().inlineEndMarginIsAuto(FlexDirection::Row, direction);
++    bool hasMarginBlockAuto = item.node->style().inlineStartMarginIsAuto(FlexDirection::Column, direction)
++      || item.node->style().inlineEndMarginIsAuto(FlexDirection::Column, direction);
++
++    // For stretch-aligned items with a definite containing block size and no auto margins,
++    // treat the item as having a definite size in that axis (it will stretch to fill).
++    const auto& itemStyle = item.node->style();
++
++    if (yoga::isDefined(containingBlockWidth) &&
++        !hasDefiniteWidth &&
++        justifySelf == Justify::Stretch &&
++        !hasMarginInlineAuto) {
++      itemWidthSizingMode = SizingMode::StretchFit;
++      availableWidth = containingBlockWidth;
++    }
++
++    if (yoga::isDefined(containingBlockHeight) &&
++        !item.node->hasDefiniteLength(Dimension::Height, containingBlockHeight) &&
++        alignSelf == Align::Stretch &&
++        !hasMarginBlockAuto) {
++      itemHeightSizingMode = SizingMode::StretchFit;
++      availableHeight = containingBlockHeight;
++    }
++
++    if (itemStyle.aspectRatio().isDefined() &&
++        !yoga::inexactEquals(itemStyle.aspectRatio().unwrap(), 0.0f)) {
++      const float aspectRatio = itemStyle.aspectRatio().unwrap();
++      if (itemWidthSizingMode == SizingMode::StretchFit &&
++          itemHeightSizingMode == SizingMode::StretchFit) {
++        if (!hasDefiniteWidth && !hasDefiniteHeight) {
++          auto resolvedWidth = (availableHeight - marginBlock) * aspectRatio;
++          resolvedWidth = boundAxis(
++            item.node,
++            FlexDirection::Row,
++            direction,
++            resolvedWidth,
++            containingBlockWidth,
++            containingBlockWidth);
++          availableWidth = resolvedWidth + marginInline;
++        }
++      } else if (itemWidthSizingMode == SizingMode::StretchFit &&
++                 itemHeightSizingMode != SizingMode::StretchFit) {
++        auto resolvedHeight = (availableWidth - marginInline) / aspectRatio;
++        resolvedHeight = boundAxis(
++          item.node,
++          FlexDirection::Column,
++          direction,
++          resolvedHeight,
++          containingBlockHeight,
++          containingBlockWidth);
++        availableHeight = resolvedHeight + marginBlock;
++        itemHeightSizingMode = SizingMode::StretchFit;
++      } else if (itemHeightSizingMode == SizingMode::StretchFit &&
++                 itemWidthSizingMode != SizingMode::StretchFit) {
++        auto resolvedWidth = (availableHeight - marginBlock) * aspectRatio;
++        resolvedWidth = boundAxis(
++          item.node,
++          FlexDirection::Row,
++          direction,
++          resolvedWidth,
++          containingBlockWidth,
++          containingBlockWidth);
++        availableWidth = resolvedWidth + marginInline;
++        itemWidthSizingMode = SizingMode::StretchFit;
++      }
++    }
++
++    constrainMaxSizeForMode(item.node,
++      direction,
++      FlexDirection::Row,
++      containingBlockWidth,
++      containingBlockWidth,
++      &itemWidthSizingMode,
++      &availableWidth);
++    constrainMaxSizeForMode(item.node,
++      direction,
++      FlexDirection::Column,
++      containingBlockHeight,
++      containingBlockWidth,
++      &itemHeightSizingMode,
++      &availableHeight);
++
++    return ItemConstraint{
++      availableWidth,
++      availableHeight,
++      itemWidthSizingMode,
++      itemHeightSizingMode,
++      containingBlockWidth,
++      containingBlockHeight
++    };
++  }
++
++  float calculateEffectiveRowGapForEstimation() {
++    auto rowGap = node->style().computeGapForDimension(Dimension::Height, containerInnerHeight);
++
++    if (!yoga::isDefined(containerInnerHeight)) {
++      return rowGap;
++    }
++
++    float totalTrackSize = 0.0f;
++    for (auto& track : rowTracks) {
++      if (isFixedSizingFunction(track.maxSizingFunction, containerInnerHeight)) {
++        totalTrackSize += track.maxSizingFunction.resolve(containerInnerHeight).unwrap();
++      } else {
++        return rowGap;
++      }
++    }
++
++    float totalGapSize = rowTracks.size() > 1 ? rowGap * (rowTracks.size() - 1) : 0.0f;
++    float freeSpace = containerInnerHeight - totalTrackSize - totalGapSize;
++
++    auto distribution = calculateContentDistribution(Dimension::Height, freeSpace);
++
++    return distribution.effectiveGap;
++  }
++
++  float calculateEffectiveGapFromBaseSizes(Dimension dimension) {
++    auto containerSize = dimension == Dimension::Width ? containerInnerWidth : containerInnerHeight;
++    auto gap = node->style().computeGapForDimension(dimension, containerSize);
++    const auto& tracks = dimension == Dimension::Width ? columnTracks : rowTracks;
++
++    if (!yoga::isDefined(containerSize)) {
++      return gap;
++    }
++
++    float totalTrackSize = 0.0f;
++    for (auto& track : tracks) {
++      totalTrackSize += track.baseSize;
++    }
++
++    float totalGapSize = tracks.size() > 1 ? gap * (tracks.size() - 1) : 0.0f;
++    float freeSpace = containerSize - totalTrackSize - totalGapSize;
++
++    auto distribution = calculateContentDistribution(dimension, freeSpace);
++
++    return distribution.effectiveGap;
++  }
++
++  bool contributionsChanged(
++      Dimension dimension,
++      CrossDimensionEstimator estimatorBefore,
++      CrossDimensionEstimator estimatorAfter) {
++    for (const auto& item : gridItems) {
++      if (!item.crossesIntrinsicTrack(dimension)) {
++        continue;
++      }
++
++      float crossDimBefore = estimatorBefore ? estimatorBefore(item) : YGUndefined;
++      float crossDimAfter = estimatorAfter ? estimatorAfter(item) : YGUndefined;
++
++      // If cross dimension hasn't changed, contribution depending on it won't change
++      if (crossDimBefore == crossDimAfter) {
++        continue;
++      }
++
++      float containingBlockWidth = dimension == Dimension::Width ? YGUndefined : crossDimBefore;
++      float containingBlockHeight = dimension == Dimension::Width ? crossDimBefore : YGUndefined;
++      auto constraintsBefore = calculateItemConstraints(item, containingBlockWidth, containingBlockHeight);
++      float contributionBefore = minContentContribution(item, dimension, constraintsBefore);
++
++      containingBlockWidth = dimension == Dimension::Width ? YGUndefined : crossDimAfter;
++      containingBlockHeight = dimension == Dimension::Width ? crossDimAfter : YGUndefined;
++      auto constraintsAfter = calculateItemConstraints(item, containingBlockWidth, containingBlockHeight);
++      float contributionAfter = minContentContribution(item, dimension, constraintsAfter);
++
++      if (contributionBefore != contributionAfter) {
++        return true;
++      }
++    }
++    return false;
++  }
++
++  bool itemSizeDependsOnIntrinsicTracks(const GridItem& item) const {
++    auto heightStyle = item.node->style().dimension(Dimension::Height);
++    if (heightStyle.isPercent()) {
++      for (size_t i = item.rowStart; i < item.rowEnd && i < rowTracks.size(); i++) {
++        if (isIntrinsicSizingFunction(rowTracks[i].minSizingFunction, containerInnerHeight) ||
++            isIntrinsicSizingFunction(rowTracks[i].maxSizingFunction, containerInnerHeight)) {
++          return true;
++        }
++      }
++    }
++    return false;
++  }
++
++  void computeItemTrackCrossingFlags() {
++    for (auto& item : gridItems) {
++      item.crossesFlexibleColumn = false;
++      item.crossesIntrinsicColumn = false;
++      item.crossesFlexibleRow = false;
++      item.crossesIntrinsicRow = false;
++
++      for (size_t i = item.columnStart; i < item.columnEnd; i++) {
++        if (isFlexibleSizingFunction(columnTracks[i].maxSizingFunction)) {
++          item.crossesFlexibleColumn = true;
++        } else if (isIntrinsicSizingFunction(columnTracks[i].maxSizingFunction, containerInnerWidth)) {
++          item.crossesIntrinsicColumn = true;
++        }
++        if (isIntrinsicSizingFunction(columnTracks[i].minSizingFunction, containerInnerWidth)) {
++          item.crossesIntrinsicColumn = true;
++        }
++      }
++
++      for (size_t i = item.rowStart; i < item.rowEnd; i++) {
++        if (isFlexibleSizingFunction(rowTracks[i].maxSizingFunction)) {
++          item.crossesFlexibleRow = true;
++        } else if (isIntrinsicSizingFunction(rowTracks[i].maxSizingFunction, containerInnerHeight)) {
++          item.crossesIntrinsicRow = true;
++        }
++        if (isIntrinsicSizingFunction(rowTracks[i].minSizingFunction, containerInnerHeight)) {
++          item.crossesIntrinsicRow = true;
++        }
++      }
++    }
++  }
++
++  CrossDimensionEstimator makeRowHeightEstimatorUsingFixedTracks(float gap) {
++    auto& tracks = rowTracks;
++    auto containerHeight = containerInnerHeight;
++    return [&tracks, containerHeight, gap](const GridItem& item) -> float {
++      float height = 0.0f;
++      for (size_t i = item.rowStart; i < item.rowEnd && i < tracks.size(); i++) {
++        if (isFixedSizingFunction(tracks[i].maxSizingFunction, containerHeight)) {
++          height += tracks[i].maxSizingFunction.resolve(containerHeight).unwrap();
++          if (i < item.rowEnd - 1) {
++            height += gap;
++          }
++        } else {
++          return YGUndefined;
++        }
++      }
++      return height;
++    };
++  }
++
++  CrossDimensionEstimator makeCrossDimensionEstimatorUsingBaseSize(Dimension dimension, float gap) {
++    std::vector<float> baseSizes;
++    auto& tracks = dimension == Dimension::Width ? columnTracks : rowTracks;
++    baseSizes.reserve(tracks.size());
++    for (const auto& track : tracks) {
++      baseSizes.push_back(track.baseSize);
++    }
++    auto startIndexKey = dimension == Dimension::Width ? &GridItem::columnStart : &GridItem::rowStart;
++    auto endIndexKey = dimension == Dimension::Width ? &GridItem::columnEnd : &GridItem::rowEnd;
++    return [baseSizes = std::move(baseSizes), gap, startIndexKey, endIndexKey](const GridItem& item) -> float {
++      float width = 0.0f;
++      for (size_t i = item.*startIndexKey; i < item.*endIndexKey && i < baseSizes.size(); i++) {
++        width += baseSizes[i];
++        if (i < item.*endIndexKey - 1) {
++          width += gap;
++        }
++      }
++      return width;
++    };
++  }
++};
++
++} // namespace facebook::yoga
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/enums/Align.h b/node_modules/react-native/ReactCommon/yoga/yoga/enums/Align.h
-index 3896fe2..e1b8b29 100644
+index 3896fe2b8b1d82..e1b8b29bd74e0d 100644
 --- a/node_modules/react-native/ReactCommon/yoga/yoga/enums/Align.h
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/enums/Align.h
 @@ -25,11 +25,13 @@ enum class Align : uint8_t {
@@ -1742,16 +4144,16 @@ index 3896fe2..e1b8b29 100644
 +  Start = YGAlignStart,
 +  End = YGAlignEnd,
  };
- 
+
  template <>
  constexpr int32_t ordinalCount<Align>() {
 -  return 9;
 +  return 11;
  }
- 
+
  constexpr Align scopedEnum(YGAlign unscoped) {
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/enums/Display.h b/node_modules/react-native/ReactCommon/yoga/yoga/enums/Display.h
-index 9bf23c0..9edbee8 100644
+index 9bf23c0ac7bd1e..9edbee80b59168 100644
 --- a/node_modules/react-native/ReactCommon/yoga/yoga/enums/Display.h
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/enums/Display.h
 @@ -19,11 +19,12 @@ enum class Display : uint8_t {
@@ -1760,24 +4162,23 @@ index 9bf23c0..9edbee8 100644
    Contents = YGDisplayContents,
 +  Grid = YGDisplayGrid,
  };
- 
+
  template <>
  constexpr int32_t ordinalCount<Display>() {
 -  return 3;
 +  return 4;
  }
- 
+
  constexpr Display scopedEnum(YGDisplay unscoped) {
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/enums/Justify.h b/node_modules/react-native/ReactCommon/yoga/yoga/enums/Justify.h
-index 255baa6..c4d29a0 100644
+index 255baa6e27d887..db4afece9aa514 100644
 --- a/node_modules/react-native/ReactCommon/yoga/yoga/enums/Justify.h
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/enums/Justify.h
-@@ -16,17 +16,23 @@
+@@ -16,17 +16,21 @@
  namespace facebook::yoga {
- 
+
  enum class Justify : uint8_t {
 +  Auto = YGJustifyAuto,
-+
    FlexStart = YGJustifyFlexStart,
    Center = YGJustifyCenter,
    FlexEnd = YGJustifyFlexEnd,
@@ -1787,18 +4188,17 @@ index 255baa6..c4d29a0 100644
 +  Stretch = YGJustifyStretch,
 +  Start = YGJustifyStart,
 +  End = YGJustifyEnd,
-+
  };
- 
+
  template <>
  constexpr int32_t ordinalCount<Justify>() {
 -  return 6;
 +  return 10;
  }
- 
+
  constexpr Justify scopedEnum(YGJustify unscoped) {
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/event/event.h b/node_modules/react-native/ReactCommon/yoga/yoga/event/event.h
-index 587c1cd..0d03224 100644
+index 587c1cd063676a..0d032240dd94f6 100644
 --- a/node_modules/react-native/ReactCommon/yoga/yoga/event/event.h
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/event/event.h
 @@ -32,6 +32,7 @@ enum struct LayoutPassReason : int {
@@ -1808,15 +4208,15 @@ index 587c1cd..0d03224 100644
 +  kGridLayout = 8,
    COUNT
  };
- 
+
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/node/Node.h b/node_modules/react-native/ReactCommon/yoga/yoga/node/Node.h
-index 8068c81..d22c4c1 100644
+index 8068c814973110..d22c4c1ef04021 100644
 --- a/node_modules/react-native/ReactCommon/yoga/yoga/node/Node.h
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/node/Node.h
 @@ -294,15 +294,15 @@ class YG_EXPORT Node : public ::YGNode {
    bool isNodeFlexible();
    void reset();
- 
+
 - private:
 -  // Used to allow resetting the node
 -  Node& operator=(Node&&) noexcept = default;
@@ -1825,7 +4225,7 @@ index 8068c81..d22c4c1 100644
        FlexDirection axis,
        Direction direction,
        float axisSize) const;
- 
+
 + private:
 +  // Used to allow resetting the node
 +  Node& operator=(Node&&) noexcept = default;
@@ -1835,7 +4235,7 @@ index 8068c81..d22c4c1 100644
      style_.setAlignContent(Align::Stretch);
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/style/GridLine.h b/node_modules/react-native/ReactCommon/yoga/yoga/style/GridLine.h
 new file mode 100644
-index 0000000..55fbfe9
+index 00000000000000..e61ca58b8c65e2
 --- /dev/null
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/style/GridLine.h
 @@ -0,0 +1,61 @@
@@ -1862,9 +4262,9 @@ index 0000000..55fbfe9
 +};
 +
 +struct GridLine {
-+  GridLineType type = GridLineType::Auto;
++  GridLineType type;
 +  // Line position (1, 2, -1, -2, etc)
-+  int32_t integer = 0;
++  int32_t integer;
 +
 +  static GridLine auto_() {
 +    return GridLine{GridLineType::Auto, 0};
@@ -1902,10 +4302,10 @@ index 0000000..55fbfe9
 +} // namespace facebook::yoga
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/style/GridTrack.h b/node_modules/react-native/ReactCommon/yoga/yoga/style/GridTrack.h
 new file mode 100644
-index 0000000..b40db00
+index 00000000000000..0a55804649745e
 --- /dev/null
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/style/GridTrack.h
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,61 @@
 +/*
 + * Copyright (c) Meta Platforms, Inc. and affiliates.
 + *
@@ -1925,6 +4325,7 @@ index 0000000..b40db00
 +    StyleSizeLength maxSizingFunction;
 +
 +    // These are used in the grid layout algorithm when distributing spaces among tracks
++    // TODO: maybe move them to TrackSizing since these are track states
 +    float baseSize = 0.0f;
 +    float growthLimit = 0.0f;
 +    bool infinitelyGrowable = false;
@@ -1967,7 +4368,7 @@ index 0000000..b40db00
 +
 +} // namespace facebook::yoga
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/style/Style.h b/node_modules/react-native/ReactCommon/yoga/yoga/style/Style.h
-index 923b268..a857453 100644
+index 566b6934e69972..2793073843d5db 100644
 --- a/node_modules/react-native/ReactCommon/yoga/yoga/style/Style.h
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/style/Style.h
 @@ -32,6 +32,8 @@
@@ -1976,13 +4377,14 @@ index 923b268..a857453 100644
  #include <yoga/style/StyleValuePool.h>
 +#include <yoga/style/GridTrack.h>
 +#include <yoga/style/GridLine.h>
- 
+
  namespace facebook::yoga {
- 
-@@ -79,6 +81,13 @@ class YG_EXPORT Style {
-     alignItems_ = value;
+
+@@ -65,6 +67,21 @@ class YG_EXPORT Style {
+     justifyContent_ = value;
    }
- 
+
++
 +  Justify justifyItems() const {
 +    return justifyItems_;
 +  }
@@ -1990,13 +4392,6 @@ index 923b268..a857453 100644
 +    justifyItems_ = value;
 +  }
 +
-   Align alignSelf() const {
-     return alignSelf_;
-   }
-@@ -86,6 +95,13 @@ class YG_EXPORT Style {
-     alignSelf_ = value;
-   }
- 
 +  Justify justifySelf() const {
 +    return justifySelf_;
 +  }
@@ -2004,92 +4399,108 @@ index 923b268..a857453 100644
 +    justifySelf_ = value;
 +  }
 +
-   PositionType positionType() const {
-     return positionType_;
+   Align alignContent() const {
+     return alignContent_;
    }
-@@ -114,6 +130,70 @@ class YG_EXPORT Style {
-     display_ = value;
+@@ -191,6 +208,64 @@ class YG_EXPORT Style {
+     pool_.store(minDimensions_[yoga::to_underlying(axis)], value);
    }
- 
-+  float computeGapForDimension(Dimension dimension, float ownerSize) const {
-+    (void)dimension;
-+    (void)ownerSize;
-+    return 0.0f;
-+  }
-+
+
 +  // Grid Container Properties
-+  GridTrackList gridTemplateColumns() const {
++  const GridTrackList& gridTemplateColumns() const {
 +    return gridTemplateColumns_;
 +  }
 +  void setGridTemplateColumns(GridTrackList value) {
-+    gridTemplateColumns_ = value;
++    gridTemplateColumns_ = std::move(value);
 +  }
 +
-+  GridTrackList gridTemplateRows() const {
++  const GridTrackList& gridTemplateRows() const {
 +    return gridTemplateRows_;
 +  }
 +  void setGridTemplateRows(GridTrackList value) {
-+    gridTemplateRows_ = value;
++    gridTemplateRows_ = std::move(value);
 +  }
 +
-+  GridTrackList gridAutoColumns() const {
++  const GridTrackList& gridAutoColumns() const {
 +    return gridAutoColumns_;
 +  }
 +  void setGridAutoColumns(GridTrackList value) {
-+    gridAutoColumns_ = value;
++    gridAutoColumns_ = std::move(value);
 +  }
 +
-+  GridTrackList gridAutoRows() const {
++  const GridTrackList& gridAutoRows() const {
 +    return gridAutoRows_;
 +  }
 +  void setGridAutoRows(GridTrackList value) {
-+    gridAutoRows_ = value;
++    gridAutoRows_ = std::move(value);
 +  }
 +
 +  // Grid Item Properties
-+  GridLine gridColumnStart() const {
++  const GridLine& gridColumnStart() const {
 +    return gridColumnStart_;
 +  }
 +  void setGridColumnStart(GridLine value) {
-+    gridColumnStart_ = value;
++    gridColumnStart_ = std::move(value);
 +  }
 +
-+  GridLine gridColumnEnd() const {
++  const GridLine& gridColumnEnd() const {
 +    return gridColumnEnd_;
 +  }
 +  void setGridColumnEnd(GridLine value) {
-+    gridColumnEnd_ = value;
++    gridColumnEnd_ = std::move(value);
 +  }
 +
-+  GridLine gridRowStart() const {
++  const GridLine& gridRowStart() const {
 +    return gridRowStart_;
 +  }
 +  void setGridRowStart(GridLine value) {
-+    gridRowStart_ = value;
++    gridRowStart_ = std::move(value);
 +  }
 +
-+  GridLine gridRowEnd() const {
++  const GridLine& gridRowEnd() const {
 +    return gridRowEnd_;
 +  }
 +  void setGridRowEnd(GridLine value) {
-+    gridRowEnd_ = value;
++    gridRowEnd_ = std::move(value);
 +  }
 +
-   FloatOptional flex() const {
-     return pool_.getNumber(flex_);
+   FloatOptional resolvedMinDimension(
+       Direction direction,
+       Dimension axis,
+@@ -515,6 +590,11 @@ class YG_EXPORT Style {
+     return maxOrDefined(gap.resolve(ownerSize).unwrap(), 0.0f);
    }
-@@ -527,8 +607,10 @@ class YG_EXPORT Style {
+
++  float computeGapForDimension(Dimension dimension, float ownerSize) const {
++    auto gap = dimension == Dimension::Width ? computeColumnGap() : computeRowGap();
++    return maxOrDefined(gap.resolve(ownerSize).unwrap(), 0.0f);
++  }
++
+   bool flexStartMarginIsAuto(FlexDirection axis, Direction direction) const {
+     return computeMargin(flexStartEdge(axis), direction).isAuto();
+   }
+@@ -523,10 +603,20 @@ class YG_EXPORT Style {
+     return computeMargin(flexEndEdge(axis), direction).isAuto();
+   }
+
++  bool inlineStartMarginIsAuto(FlexDirection axis, Direction direction) const {
++    return computeMargin(inlineStartEdge(axis, direction), direction).isAuto();
++  }
++
++  bool inlineEndMarginIsAuto(FlexDirection axis, Direction direction) const {
++    return computeMargin(inlineEndEdge(axis, direction), direction).isAuto();
++  }
++
+   bool operator==(const Style& other) const {
      return direction_ == other.direction_ &&
          flexDirection_ == other.flexDirection_ &&
          justifyContent_ == other.justifyContent_ &&
 +        justifyItems_ == other.justifyItems_ &&
++        justifySelf_ == other.justifySelf_ &&
          alignContent_ == other.alignContent_ &&
          alignItems_ == other.alignItems_ && alignSelf_ == other.alignSelf_ &&
-+        justifySelf_ == other.justifySelf_ &&
          positionType_ == other.positionType_ && flexWrap_ == other.flexWrap_ &&
-         overflow_ == other.overflow_ && display_ == other.display_ &&
-         numbersEqual(flex_, pool_, other.flex_, other.pool_) &&
-@@ -545,7 +627,15 @@ class YG_EXPORT Style {
+@@ -545,7 +635,15 @@ class YG_EXPORT Style {
                 minDimensions_, pool_, other.minDimensions_, other.pool_) &&
          lengthsEqual(
                 maxDimensions_, pool_, other.maxDimensions_, other.pool_) &&
@@ -2104,492 +4515,49 @@ index 923b268..a857453 100644
 +        gridRowStart_ == other.gridRowStart_ &&
 +        gridRowEnd_ == other.gridRowEnd_;
    }
- 
+
    bool operator!=(const Style& other) const {
-@@ -727,9 +817,11 @@ class YG_EXPORT Style {
+@@ -727,6 +825,8 @@ class YG_EXPORT Style {
    FlexDirection flexDirection_
-        : bitCount<FlexDirection>() = FlexDirection::Column;
+       : bitCount<FlexDirection>() = FlexDirection::Column;
    Justify justifyContent_ : bitCount<Justify>() = Justify::FlexStart;
 +  Justify justifyItems_ : bitCount<Justify>() = Justify::Stretch;
++  Justify justifySelf_ : bitCount<Justify>() = Justify::Auto;
    Align alignContent_ : bitCount<Align>() = Align::FlexStart;
    Align alignItems_ : bitCount<Align>() = Align::Stretch;
    Align alignSelf_ : bitCount<Align>() = Align::Auto;
-+  Justify justifySelf_ : bitCount<Justify>() = Justify::Auto;
-   PositionType positionType_
-       : bitCount<PositionType>() = PositionType::Relative;
-   Wrap flexWrap_ : bitCount<Wrap>() = Wrap::NoWrap;
-@@ -753,6 +845,15 @@ class YG_EXPORT Style {
+@@ -753,6 +853,16 @@ class YG_EXPORT Style {
    Dimensions maxDimensions_{};
    StyleValueHandle aspectRatio_{};
- 
+
++  // Grid properties
 +  GridTrackList gridTemplateColumns_{};
 +  GridTrackList gridTemplateRows_{};
 +  GridTrackList gridAutoColumns_{};
 +  GridTrackList gridAutoRows_{};
-+  GridLine gridColumnStart_{GridLine::auto_()};
-+  GridLine gridColumnEnd_{GridLine::auto_()};
-+  GridLine gridRowStart_{GridLine::auto_()};
-+  GridLine gridRowEnd_{GridLine::auto_()};
++  GridLine gridColumnStart_{};
++  GridLine gridColumnEnd_{};
++  GridLine gridRowStart_{};
++  GridLine gridRowEnd_{};
 +
    StyleValuePool pool_;
  };
- 
- 
-+  float computeFlexEndPosition(
-+      FlexDirection axis,
-+      Direction direction,
-+      float axisSize) const {
-+    return computePosition(flexEndEdge(axis), direction)
-+        .resolve(axisSize)
-+        .unwrapOrDefault(0.0f);
-+  }
-+
-+  float computeInlineEndPosition(
-+      FlexDirection axis,
-+      Direction direction,
-+      float axisSize) const {
-+    return computePosition(inlineEndEdge(axis, direction), direction)
-+        .resolve(axisSize)
-+        .unwrapOrDefault(0.0f);
-+  }
-+
-+  float computeFlexStartMargin(
-+      FlexDirection axis,
-+      Direction direction,
-+      float widthSize) const {
-+    return computeMargin(flexStartEdge(axis), direction)
-+        .resolve(widthSize)
-+        .unwrapOrDefault(0.0f);
-+  }
-+
-+  float computeInlineStartMargin(
-+      FlexDirection axis,
-+      Direction direction,
-+      float widthSize) const {
-+    return computeMargin(inlineStartEdge(axis, direction), direction)
-+        .resolve(widthSize)
-+        .unwrapOrDefault(0.0f);
-+  }
-+
-+  float computeFlexEndMargin(
-+      FlexDirection axis,
-+      Direction direction,
-+      float widthSize) const {
-+    return computeMargin(flexEndEdge(axis), direction)
-+        .resolve(widthSize)
-+        .unwrapOrDefault(0.0f);
-+  }
-+
-+  float computeInlineEndMargin(
-+      FlexDirection axis,
-+      Direction direction,
-+      float widthSize) const {
-+    return computeMargin(inlineEndEdge(axis, direction), direction)
-+        .resolve(widthSize)
-+        .unwrapOrDefault(0.0f);
-+  }
-+
-+  float computeFlexStartBorder(FlexDirection axis, Direction direction) const {
-+    return maxOrDefined(
-+        computeBorder(flexStartEdge(axis), direction).resolve(0.0f).unwrap(),
-+        0.0f);
-+  }
-+
-+  float computeInlineStartBorder(FlexDirection axis, Direction direction)
-+      const {
-+    return maxOrDefined(
-+        computeBorder(inlineStartEdge(axis, direction), direction)
-+            .resolve(0.0f)
-+            .unwrap(),
-+        0.0f);
-+  }
-+
-+  float computeFlexEndBorder(FlexDirection axis, Direction direction) const {
-+    return maxOrDefined(
-+        computeBorder(flexEndEdge(axis), direction).resolve(0.0f).unwrap(),
-+        0.0f);
-+  }
-+
-+  float computeInlineEndBorder(FlexDirection axis, Direction direction) const {
-+    return maxOrDefined(
-+        computeBorder(inlineEndEdge(axis, direction), direction)
-+            .resolve(0.0f)
-+            .unwrap(),
-+        0.0f);
-+  }
-+
-+  float computeFlexStartPadding(
-+      FlexDirection axis,
-+      Direction direction,
-+      float widthSize) const {
-+    return maxOrDefined(
-+        computePadding(flexStartEdge(axis), direction)
-+            .resolve(widthSize)
-+            .unwrap(),
-+        0.0f);
-+  }
-+
-+  float computeInlineStartPadding(
-+      FlexDirection axis,
-+      Direction direction,
-+      float widthSize) const {
-+    return maxOrDefined(
-+        computePadding(inlineStartEdge(axis, direction), direction)
-+            .resolve(widthSize)
-+            .unwrap(),
-+        0.0f);
-+  }
-+
-+  float computeFlexEndPadding(
-+      FlexDirection axis,
-+      Direction direction,
-+      float widthSize) const {
-+    return maxOrDefined(
-+        computePadding(flexEndEdge(axis), direction)
-+            .resolve(widthSize)
-+            .unwrap(),
-+        0.0f);
-+  }
-+
-+  float computeInlineEndPadding(
-+      FlexDirection axis,
-+      Direction direction,
-+      float widthSize) const {
-+    return maxOrDefined(
-+        computePadding(inlineEndEdge(axis, direction), direction)
-+            .resolve(widthSize)
-+            .unwrap(),
-+        0.0f);
-+  }
-+
-+  float computeInlineStartPaddingAndBorder(
-+      FlexDirection axis,
-+      Direction direction,
-+      float widthSize) const {
-+    return computeInlineStartPadding(axis, direction, widthSize) +
-+        computeInlineStartBorder(axis, direction);
-+  }
-+
-+  float computeFlexStartPaddingAndBorder(
-+      FlexDirection axis,
-+      Direction direction,
-+      float widthSize) const {
-+    return computeFlexStartPadding(axis, direction, widthSize) +
-+        computeFlexStartBorder(axis, direction);
-+  }
-+
-+  float computeInlineEndPaddingAndBorder(
-+      FlexDirection axis,
-+      Direction direction,
-+      float widthSize) const {
-+    return computeInlineEndPadding(axis, direction, widthSize) +
-+        computeInlineEndBorder(axis, direction);
-+  }
-+
-+  float computeFlexEndPaddingAndBorder(
-+      FlexDirection axis,
-+      Direction direction,
-+      float widthSize) const {
-+    return computeFlexEndPadding(axis, direction, widthSize) +
-+        computeFlexEndBorder(axis, direction);
-+  }
-+
-+  float computePaddingAndBorderForDimension(
-+      Direction direction,
-+      Dimension dimension,
-+      float widthSize) const {
-+    FlexDirection flexDirectionForDimension = dimension == Dimension::Width
-+        ? FlexDirection::Row
-+        : FlexDirection::Column;
-+
-+    return computeFlexStartPaddingAndBorder(
-+               flexDirectionForDimension, direction, widthSize) +
-+        computeFlexEndPaddingAndBorder(
-+               flexDirectionForDimension, direction, widthSize);
-+  }
-+
-+  float computeBorderForAxis(FlexDirection axis) const {
-+    return computeInlineStartBorder(axis, Direction::LTR) +
-+        computeInlineEndBorder(axis, Direction::LTR);
-+  }
-+
-+  float computeMarginForAxis(FlexDirection axis, float widthSize) const {
-+    // The total margin for a given axis does not depend on the direction
-+    // so hardcoding LTR here to avoid piping direction to this function
-+    return computeInlineStartMargin(axis, Direction::LTR, widthSize) +
-+        computeInlineEndMargin(axis, Direction::LTR, widthSize);
-+  }
-+
-+  float computeGapForAxis(FlexDirection axis, float ownerSize) const {
-+    auto gap = isRow(axis) ? computeColumnGap() : computeRowGap();
-+    return maxOrDefined(gap.resolve(ownerSize).unwrap(), 0.0f);
-+  }
-+
-+  bool flexStartMarginIsAuto(FlexDirection axis, Direction direction) const {
-+    return computeMargin(flexStartEdge(axis), direction).isAuto();
-+  }
-+
-+  bool flexEndMarginIsAuto(FlexDirection axis, Direction direction) const {
-+    return computeMargin(flexEndEdge(axis), direction).isAuto();
-+  }
-+
-+  bool operator==(const Style& other) const {
-+    return direction_ == other.direction_ &&
-+        flexDirection_ == other.flexDirection_ &&
-+        justifyContent_ == other.justifyContent_ &&
-+        alignContent_ == other.alignContent_ &&
-+        alignItems_ == other.alignItems_ && alignSelf_ == other.alignSelf_ &&
-+        positionType_ == other.positionType_ && flexWrap_ == other.flexWrap_ &&
-+        overflow_ == other.overflow_ && display_ == other.display_ &&
-+        numbersEqual(flex_, pool_, other.flex_, other.pool_) &&
-+        numbersEqual(flexGrow_, pool_, other.flexGrow_, other.pool_) &&
-+        numbersEqual(flexShrink_, pool_, other.flexShrink_, other.pool_) &&
-+        lengthsEqual(flexBasis_, pool_, other.flexBasis_, other.pool_) &&
-+        lengthsEqual(margin_, pool_, other.margin_, other.pool_) &&
-+        lengthsEqual(position_, pool_, other.position_, other.pool_) &&
-+        lengthsEqual(padding_, pool_, other.padding_, other.pool_) &&
-+        lengthsEqual(border_, pool_, other.border_, other.pool_) &&
-+        lengthsEqual(gap_, pool_, other.gap_, other.pool_) &&
-+        lengthsEqual(dimensions_, pool_, other.dimensions_, other.pool_) &&
-+        lengthsEqual(
-+               minDimensions_, pool_, other.minDimensions_, other.pool_) &&
-+        lengthsEqual(
-+               maxDimensions_, pool_, other.maxDimensions_, other.pool_) &&
-+        numbersEqual(aspectRatio_, pool_, other.aspectRatio_, other.pool_);
-+  }
-+
-+  bool operator!=(const Style& other) const {
-+    return !(*this == other);
-+  }
-+
-+ private:
-+  using Dimensions = std::array<StyleValueHandle, ordinalCount<Dimension>()>;
-+  using Edges = std::array<StyleValueHandle, ordinalCount<Edge>()>;
-+  using Gutters = std::array<StyleValueHandle, ordinalCount<Gutter>()>;
-+
-+  static inline bool numbersEqual(
-+      const StyleValueHandle& lhsHandle,
-+      const StyleValuePool& lhsPool,
-+      const StyleValueHandle& rhsHandle,
-+      const StyleValuePool& rhsPool) {
-+    return (lhsHandle.isUndefined() && rhsHandle.isUndefined()) ||
-+        (lhsPool.getNumber(lhsHandle) == rhsPool.getNumber(rhsHandle));
-+  }
-+
-+  static inline bool lengthsEqual(
-+      const StyleValueHandle& lhsHandle,
-+      const StyleValuePool& lhsPool,
-+      const StyleValueHandle& rhsHandle,
-+      const StyleValuePool& rhsPool) {
-+    return (lhsHandle.isUndefined() && rhsHandle.isUndefined()) ||
-+        (lhsPool.getLength(lhsHandle) == rhsPool.getLength(rhsHandle));
-+  }
-+
-+  template <size_t N>
-+  static inline bool lengthsEqual(
-+      const std::array<StyleValueHandle, N>& lhs,
-+      const StyleValuePool& lhsPool,
-+      const std::array<StyleValueHandle, N>& rhs,
-+      const StyleValuePool& rhsPool) {
-+    return std::equal(
-+        lhs.begin(),
-+        lhs.end(),
-+        rhs.begin(),
-+        rhs.end(),
-+        [&](const auto& lhs, const auto& rhs) {
-+          return lengthsEqual(lhs, lhsPool, rhs, rhsPool);
-+        });
-+  }
-+
-+  Style::Length computeColumnGap() const {
-+    if (gap_[yoga::to_underlying(Gutter::Column)].isDefined()) {
-+      return pool_.getLength(gap_[yoga::to_underlying(Gutter::Column)]);
-+    } else {
-+      return pool_.getLength(gap_[yoga::to_underlying(Gutter::All)]);
-+    }
-+  }
-+
-+  Style::Length computeRowGap() const {
-+    if (gap_[yoga::to_underlying(Gutter::Row)].isDefined()) {
-+      return pool_.getLength(gap_[yoga::to_underlying(Gutter::Row)]);
-+    } else {
-+      return pool_.getLength(gap_[yoga::to_underlying(Gutter::All)]);
-+    }
-+  }
-+
-+  Style::Length computeLeftEdge(const Edges& edges, Direction layoutDirection)
-+      const {
-+    if (layoutDirection == Direction::LTR &&
-+        edges[yoga::to_underlying(Edge::Start)].isDefined()) {
-+      return pool_.getLength(edges[yoga::to_underlying(Edge::Start)]);
-+    } else if (
-+        layoutDirection == Direction::RTL &&
-+        edges[yoga::to_underlying(Edge::End)].isDefined()) {
-+      return pool_.getLength(edges[yoga::to_underlying(Edge::End)]);
-+    } else if (edges[yoga::to_underlying(Edge::Left)].isDefined()) {
-+      return pool_.getLength(edges[yoga::to_underlying(Edge::Left)]);
-+    } else if (edges[yoga::to_underlying(Edge::Horizontal)].isDefined()) {
-+      return pool_.getLength(edges[yoga::to_underlying(Edge::Horizontal)]);
-+    } else {
-+      return pool_.getLength(edges[yoga::to_underlying(Edge::All)]);
-+    }
-+  }
-+
-+  Style::Length computeTopEdge(const Edges& edges) const {
-+    if (edges[yoga::to_underlying(Edge::Top)].isDefined()) {
-+      return pool_.getLength(edges[yoga::to_underlying(Edge::Top)]);
-+    } else if (edges[yoga::to_underlying(Edge::Vertical)].isDefined()) {
-+      return pool_.getLength(edges[yoga::to_underlying(Edge::Vertical)]);
-+    } else {
-+      return pool_.getLength(edges[yoga::to_underlying(Edge::All)]);
-+    }
-+  }
-+
-+  Style::Length computeRightEdge(const Edges& edges, Direction layoutDirection)
-+      const {
-+    if (layoutDirection == Direction::LTR &&
-+        edges[yoga::to_underlying(Edge::End)].isDefined()) {
-+      return pool_.getLength(edges[yoga::to_underlying(Edge::End)]);
-+    } else if (
-+        layoutDirection == Direction::RTL &&
-+        edges[yoga::to_underlying(Edge::Start)].isDefined()) {
-+      return pool_.getLength(edges[yoga::to_underlying(Edge::Start)]);
-+    } else if (edges[yoga::to_underlying(Edge::Right)].isDefined()) {
-+      return pool_.getLength(edges[yoga::to_underlying(Edge::Right)]);
-+    } else if (edges[yoga::to_underlying(Edge::Horizontal)].isDefined()) {
-+      return pool_.getLength(edges[yoga::to_underlying(Edge::Horizontal)]);
-+    } else {
-+      return pool_.getLength(edges[yoga::to_underlying(Edge::All)]);
-+    }
-+  }
-+
-+  Style::Length computeBottomEdge(const Edges& edges) const {
-+    if (edges[yoga::to_underlying(Edge::Bottom)].isDefined()) {
-+      return pool_.getLength(edges[yoga::to_underlying(Edge::Bottom)]);
-+    } else if (edges[yoga::to_underlying(Edge::Vertical)].isDefined()) {
-+      return pool_.getLength(edges[yoga::to_underlying(Edge::Vertical)]);
-+    } else {
-+      return pool_.getLength(edges[yoga::to_underlying(Edge::All)]);
-+    }
-+  }
-+
-+  Style::Length computePosition(PhysicalEdge edge, Direction direction) const {
-+    switch (edge) {
-+      case PhysicalEdge::Left:
-+        return computeLeftEdge(position_, direction);
-+      case PhysicalEdge::Top:
-+        return computeTopEdge(position_);
-+      case PhysicalEdge::Right:
-+        return computeRightEdge(position_, direction);
-+      case PhysicalEdge::Bottom:
-+        return computeBottomEdge(position_);
-+    }
-+
-+    fatalWithMessage("Invalid physical edge");
-+  }
-+
-+  Style::Length computeMargin(PhysicalEdge edge, Direction direction) const {
-+    switch (edge) {
-+      case PhysicalEdge::Left:
-+        return computeLeftEdge(margin_, direction);
-+      case PhysicalEdge::Top:
-+        return computeTopEdge(margin_);
-+      case PhysicalEdge::Right:
-+        return computeRightEdge(margin_, direction);
-+      case PhysicalEdge::Bottom:
-+        return computeBottomEdge(margin_);
-+    }
-+
-+    fatalWithMessage("Invalid physical edge");
-+  }
-+
-+  Style::Length computePadding(PhysicalEdge edge, Direction direction) const {
-+    switch (edge) {
-+      case PhysicalEdge::Left:
-+        return computeLeftEdge(padding_, direction);
-+      case PhysicalEdge::Top:
-+        return computeTopEdge(padding_);
-+      case PhysicalEdge::Right:
-+        return computeRightEdge(padding_, direction);
-+      case PhysicalEdge::Bottom:
-+        return computeBottomEdge(padding_);
-+    }
-+
-+    fatalWithMessage("Invalid physical edge");
-+  }
-+
-+  Style::Length computeBorder(PhysicalEdge edge, Direction direction) const {
-+    switch (edge) {
-+      case PhysicalEdge::Left:
-+        return computeLeftEdge(border_, direction);
-+      case PhysicalEdge::Top:
-+        return computeTopEdge(border_);
-+      case PhysicalEdge::Right:
-+        return computeRightEdge(border_, direction);
-+      case PhysicalEdge::Bottom:
-+        return computeBottomEdge(border_);
-+    }
-+
-+    fatalWithMessage("Invalid physical edge");
-+  }
-+
-+  Direction direction_ : bitCount<Direction>() = Direction::Inherit;
-+  FlexDirection flexDirection_
-+      : bitCount<FlexDirection>() = FlexDirection::Column;
-+  Justify justifyContent_ : bitCount<Justify>() = Justify::FlexStart;
-+  Align alignContent_ : bitCount<Align>() = Align::FlexStart;
-+  Align alignItems_ : bitCount<Align>() = Align::Stretch;
-+  Align alignSelf_ : bitCount<Align>() = Align::Auto;
-+  PositionType positionType_
-+      : bitCount<PositionType>() = PositionType::Relative;
-+  Wrap flexWrap_ : bitCount<Wrap>() = Wrap::NoWrap;
-+  Overflow overflow_ : bitCount<Overflow>() = Overflow::Visible;
-+  Display display_ : bitCount<Display>() = Display::Flex;
-+  BoxSizing boxSizing_ : bitCount<BoxSizing>() = BoxSizing::BorderBox;
-+
-+  StyleValueHandle flex_{};
-+  StyleValueHandle flexGrow_{};
-+  StyleValueHandle flexShrink_{};
-+  StyleValueHandle flexBasis_{StyleValueHandle::ofAuto()};
-+  Edges margin_{};
-+  Edges position_{};
-+  Edges padding_{};
-+  Edges border_{};
-+  Gutters gap_{};
-+  Dimensions dimensions_{
-+      StyleValueHandle::ofAuto(),
-+      StyleValueHandle::ofAuto()};
-+  Dimensions minDimensions_{};
-+  Dimensions maxDimensions_{};
-+  StyleValueHandle aspectRatio_{};
-+
-+  StyleValuePool pool_;
-+};
-+
-+} // namespace facebook::yoga
+
 diff --git a/node_modules/react-native/ReactCommon/yoga/yoga/style/StyleSizeLength.h b/node_modules/react-native/ReactCommon/yoga/yoga/style/StyleSizeLength.h
-index 8dc4f24..33b4baa 100644
+index fc4d371e421bf2..76e079b2da5828 100644
 --- a/node_modules/react-native/ReactCommon/yoga/yoga/style/StyleSizeLength.h
 +++ b/node_modules/react-native/ReactCommon/yoga/yoga/style/StyleSizeLength.h
-@@ -58,6 +58,12 @@ class StyleSizeLength {
-     return StyleSizeLength{{}, Unit::Stretch};
+
+@@ -42,6 +42,12 @@ class StyleSizeLength {
+         : StyleSizeLength{FloatOptional{value}, Unit::Percent};
    }
- 
-+  constexpr static StyleSizeLength stretch(float value) {
-+    return yoga::isUndefined(value) || yoga::isinf(value)
+
++  constexpr static StyleSizeLength stretch(float fraction) {
++    return yoga::isUndefined(fraction) || yoga::isinf(fraction)
 +        ? undefined()
-+        : StyleSizeLength{FloatOptional{value}, Unit::Stretch};
++        : StyleSizeLength{FloatOptional{fraction}, Unit::Stretch};
 +  }
 +
-   constexpr static StyleSizeLength undefined() {
-     return StyleSizeLength{{}, Unit::Undefined};
+   constexpr static StyleSizeLength ofAuto() {
+     return StyleSizeLength{{}, Unit::Auto};
    }
-@@ -98,7 +104,7 @@ class StyleSizeLength {
-     return value_;
-   }
- 
--  constexpr FloatOptional resolve(float referenceLength) {
-+  constexpr FloatOptional resolve(float referenceLength) const {
-     switch (unit_) {
-       case Unit::Point:
-         return value_;

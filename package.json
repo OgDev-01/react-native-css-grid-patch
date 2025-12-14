@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
-    "prebuild": "bun expo prebuild",
+    "prebuild": "expo prebuild",
     "postinstall": "patch-package",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
@@ -50,5 +50,6 @@
     "patch-package": "^8.0.1",
     "typescript": "~5.9.2"
   },
+  "packageManager": "pnpm@9.0.0",
   "private": true
 }

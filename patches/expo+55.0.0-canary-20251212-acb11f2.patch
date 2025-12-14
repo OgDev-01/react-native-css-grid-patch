@@ -1,0 +1,86 @@
+--- node_modules/expo/types/react-native-web.d.ts	2025-12-14 17:39:14
++++ temp_modified.d.ts	2025-12-14 18:13:32
+@@ -49,29 +49,29 @@
+     /** @platform web */
+     clip?: string;
+     /** @platform web */
+-    gridAutoColumns?: string;
++//     gridAutoColumns?: string;
+     /** @platform web */
+-    gridAutoFlow?: string;
++//     gridAutoFlow?: string;
+     /** @platform web */
+-    gridAutoRows?: string;
++//     gridAutoRows?: string;
+     /** @platform web */
+-    gridColumnEnd?: string;
++//     gridColumnEnd?: string;
+     /** @platform web */
+-    gridColumnGap?: string;
++//     gridColumnGap?: string;
+     /** @platform web */
+-    gridColumnStart?: string;
++//     gridColumnStart?: string;
+     /** @platform web */
+-    gridRowEnd?: string;
++//     gridRowEnd?: string;
+     /** @platform web */
+-    gridRowGap?: string;
++//     gridRowGap?: string;
+     /** @platform web */
+-    gridRowStart?: string;
++//     gridRowStart?: string;
+     /** @platform web */
+-    gridTemplateColumns?: string;
++//     gridTemplateColumns?: string;
+     /** @platform web */
+-    gridTemplateRows?: string;
++//     gridTemplateRows?: string;
+     /** @platform web */
+-    gridTemplateAreas?: string;
++//     gridTemplateAreas?: string;
+     /** @platform web */
+     outline?: string;
+     /** @platform web */
+@@ -166,29 +166,29 @@
+     /** @platform web */
+     filter?: string;
+     /** @platform web */
+-    gridAutoColumns?: string;
++//     gridAutoColumns?: string;
+     /** @platform web */
+-    gridAutoFlow?: string;
++//     gridAutoFlow?: string;
+     /** @platform web */
+-    gridAutoRows?: string;
++//     gridAutoRows?: string;
+     /** @platform web */
+-    gridColumnEnd?: string;
++//     gridColumnEnd?: string;
+     /** @platform web */
+-    gridColumnGap?: string;
++//     gridColumnGap?: string;
+     /** @platform web */
+-    gridColumnStart?: string;
++//     gridColumnStart?: string;
+     /** @platform web */
+-    gridRowEnd?: string;
++//     gridRowEnd?: string;
+     /** @platform web */
+-    gridRowGap?: string;
++//     gridRowGap?: string;
+     /** @platform web */
+-    gridRowStart?: string;
++//     gridRowStart?: string;
+     /** @platform web */
+-    gridTemplateColumns?: string;
++//     gridTemplateColumns?: string;
+     /** @platform web */
+-    gridTemplateRows?: string;
++//     gridTemplateRows?: string;
+     /** @platform web */
+-    gridTemplateAreas?: string;
++//     gridTemplateAreas?: string;
+     /** @platform web */
+     outline?: string;
+     /** @platform web */
